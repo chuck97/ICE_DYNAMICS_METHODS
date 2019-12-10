@@ -1,0 +1,1 @@
+splot "plt.txt" pt 7 ps 1 lc rgb 'black'
