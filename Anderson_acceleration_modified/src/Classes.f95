@@ -56,45 +56,40 @@ module module_classes
   end type Edge
   
   
-  
-  
   !! Type boundary edge
   
   type Boundary_Edge
   
   
-     integer                               :: identificator                       ! edge identificator
-     real*8                                :: coordinates(2,2)                    ! verticies coordinates
-     integer                               :: domain_boundary                     ! what domain boundary?
-     type(container_element), dimension(2) :: neighbour_elements_list             ! list of elements for edge
+     integer                               :: identificator                       
+     real*8                                :: coordinates(2,2)                    
+     integer                               :: domain_boundary                     
+     type(container_element), dimension(2) :: neighbour_elements_list             
   
   
   end type Boundary_Edge
-
-
-
 
  !! Type for triangles
   
   type Triangle
   
-     integer                                 :: identificator                                            ! triangle identificator
-     real*8                                  :: dot_epsilon1, dot_epsilon2, dot_epsilon12                ! main strain rate components(in this basis tensor epsilon is diagonal)
-     real*8                                  :: P_0                                                      ! pressure
-     real*8                                  :: coordinates(2,3)                                         ! verticies coordinates
-     real*8                                  :: sigma1, sigma2, sigma12                                  ! main sigma components(in this basis tensor sigma is diagonal) 
+     integer                                 :: identificator                                            
+     real*8                                  :: dot_epsilon1, dot_epsilon2, dot_epsilon12                
+     real*8                                  :: P_0                                                      
+     real*8                                  :: coordinates(2,3)                                         
+     real*8                                  :: sigma1, sigma2, sigma12                                   
      real*8                                  :: delta
      real*8                                  :: xi_resuid, eta_resuid, P_0_resuid
      real*8                                  :: delta_old                                                   
-     real*8                                  :: size_of_triangle                                         ! square of triangle
-     integer                                 :: number_of_neighbour_triangles                            ! number of neighbour triangles
-     type(container_element), dimension(3)   :: neighbour_elements_list                                  ! list of elements for triangle
-     type(container_edge), dimension(3)      :: neighbour_edges_list                                     ! list of edges for triangle
-     type(container_triangle), dimension(3)  :: neighbour_triangles_list                                 ! list of neighbour triangles for triangle 
-     real*8                                  :: flux_to_element(3)                                       ! fluxes to elements from neighbour_elements_list
-     real*8                                  :: u_max_triangle, u_min_triangle                           ! the maximum/minimum value of u∗ within each triangle
-     real*8                                  :: alpha_correction                                         ! flux correction coefficients
-     real*8                                  :: xi, eta                                                  ! xi and eta value on triangle
+     real*8                                  :: size_of_triangle                                         
+     integer                                 :: number_of_neighbour_triangles                            
+     type(container_element), dimension(3)   :: neighbour_elements_list                                  
+     type(container_edge), dimension(3)      :: neighbour_edges_list                                     
+     type(container_triangle), dimension(3)  :: neighbour_triangles_list                                  
+     real*8                                  :: flux_to_element(3)                                       
+     real*8                                  :: u_max_triangle, u_min_triangle                           
+     real*8                                  :: alpha_correction                                         
+     real*8                                  :: xi, eta                                                  
      real*8                                  :: delta_str
        
   end type Triangle
@@ -105,32 +100,32 @@ module module_classes
 
   type Element
   
-     integer                                      :: identificator                                         ! element identificator
-     integer                                      :: nd_identificator                                      ! non Direchlet identificator
-     real*8                                       :: coordinates(2)                                        ! element coordinate
-     real*8                                       :: u(2)                                                  ! velocity components 
-     real*8                                       :: u_old(2)                                              ! velocity components   
+     integer                                      :: identificator                                         
+     integer                                      :: nd_identificator                                      
+     real*8                                       :: coordinates(2)                                        
+     real*8                                       :: u(2)                                                  
+     real*8                                       :: u_old(2)                                              
      real*8                                       :: u_water(2)
-     real*8                                       :: u_resuid(2)                                           ! resuid velocity
+     real*8                                       :: u_resuid(2)                                           
      real*8                                       :: u_air(2)
      real*8                                       :: u_new(2)
-     real*8                                       :: m                                                     ! ice mass
+     real*8                                       :: m                                                     
      real*8                                       :: old_m
-     real*8                                       :: h                                                     ! mean ice thickness
-     real*8                                       :: A                                                     ! ice concentration
+     real*8                                       :: h                                                     
+     real*8                                       :: A                                                     
      real*8                                       :: old_A
-     real*8                                       :: element_value                                         ! element value 
-     logical                                      :: on_boundary                                           ! boundary identificator
-     integer                                      :: number_of_neighbour_elements                          ! number of neighbour elements
-     integer                                      :: number_of_neighbour_triangles                         ! number of neighbour triangles
-     integer                                      :: number_of_neighbour_edges                             ! number of neighbour edges
-     type(container_element), dimension(20)       :: neighbour_elements_list                               ! list of neighbour elements 
-     type(container_triangle), dimension(20)      :: neighbour_triangles_list                              ! list of neighbour triangles, last neighbour is the same element
-     type(container_edge), dimension(20)          :: neighbour_edges_list                                  ! list of neighbour edges
-     real*8                                       :: P_pos, P_neg                                          ! P^+ and P^- for edge from neighbour triangles
-     real*8                                       :: Q_plus, Q_minus                                       ! the maximum/minimum admissible increment for element
-     real*8                                       :: u_max_element, u_min_element                          ! the maximum/minimum value of u∗ within each triangle
-     real*8                                       :: R_plus, R_minus                                       ! the least upper bound for the correction factors
+     real*8                                       :: element_value                                         
+     logical                                      :: on_boundary                                           
+     integer                                      :: number_of_neighbour_elements                          
+     integer                                      :: number_of_neighbour_triangles                         
+     integer                                      :: number_of_neighbour_edges                             
+     type(container_element), dimension(20)       :: neighbour_elements_list                               
+     type(container_triangle), dimension(20)      :: neighbour_triangles_list                              
+     type(container_edge), dimension(20)          :: neighbour_edges_list                                  
+     real*8                                       :: P_pos, P_neg                                          
+     real*8                                       :: Q_plus, Q_minus                                       
+     real*8                                       :: u_max_element, u_min_element                          
+     real*8                                       :: R_plus, R_minus                                       
      real*8                                       :: resid_u, resid_v  
      real*8                                       :: u_str(2)
        

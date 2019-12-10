@@ -1,7 +1,7 @@
 module module_flux_correction
 
   use module_Classes
-  use module_Grid
+  use module_grid_values
   use module_numerical_integration
   use module_constants
 

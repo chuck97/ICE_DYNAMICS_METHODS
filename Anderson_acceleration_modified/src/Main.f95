@@ -1,41 +1,40 @@
 program Main
   
   use module_Classes
-  use module_Grid
+  use initialization_module
+  use module_grid_values
   use module_numerical_integration
   use module_flux_correction
   use module_constants
   use module_assembling
   use module_dynamics
   use module_matricies
+  use module_plotwrite
   
   use json_module
       
   
   implicit none
   
+  !! global time step, current time
+  real*8 :: time_step, time
   
-  real*8 :: time_step, total_time, time, squ, max_u ! time 
+  real*8 :: squ, max_u  
   
   integer :: i, j, k, num, s, r, ps
   
   real*8, allocatable                                  :: solution_anderson(:)
   real*8                                               :: previous_res
-    
-
-  
-
-!!!! BCG PARAMETERS
 
 
 ! Maximum size of matrix and the maximum number of non-zero entries
-   integer :: ide, nonzero_raw_L, nonzero_L, nonzero_raw_C, nonzero_C, m_k
-   real*8 , allocatable                                :: rhs_Anderson(:)
+  integer :: ide, nonzero_raw_L, nonzero_L, nonzero_raw_C, nonzero_C, m_k
+  real*8 , allocatable                                :: rhs_Anderson(:)
 
 ! Arrays for the matrix sparse row (CSR) format
-   real*8 :: Right_hand_C(maxn), Right_hand_L(maxn), &
+  real*8 :: Right_hand_C(maxn), Right_hand_L(maxn), &
      solution_vec_L(maxn), solution_vec_C(maxn), solution_vec(maxn), sum_mass, sum_concentration
-   type(Matrix) :: mass_matrix_high, mass_matrix_low, ND_mass_matrix, ND_mass_matrix_lum, &
+  type(Matrix) :: mass_matrix_high, mass_matrix_low, ND_mass_matrix, ND_mass_matrix_lum, &
     N_xx, N_xy, N_yx, N_yy 
     
   real*8, dimension(:,:), allocatable :: residuals_anderson, solutions_anderson, g_anderson
@@ -44,195 +43,223 @@ program Main
 
 ! Work arrays for ILU factors and 8 BCG vectors
   
-   integer, parameter :: MaxWr=maxnz+8*maxn, MaxWi=maxnz+10*maxn+1
-   real*8 :: rW(MaxWr)
-   integer :: iW(MaxWi)   
+  integer, parameter :: MaxWr=maxnz+8*maxn, MaxWi=maxnz+10*maxn+1
+  real*8 :: rW(MaxWr)
+  integer :: iW(MaxWi)   
    
 ! ILU0 data
-   integer :: ierr, ipaLU, ipjLU, ipjU, ipiw   
+  integer :: ierr, ipaLU, ipjLU, ipjU, ipiw   
    
 ! Local variables
-   integer :: ipBCG   
+  integer :: ipBCG   
    
 ! BiCGStab data
-   External :: matvec, prevec0
-   Integer :: ITER, INFO, NUNIT
-   Real*8 :: RESID
+  External :: matvec, prevec0
+  Integer :: ITER, INFO, NUNIT
+  Real*8 :: RESID
    
   integer, allocatable   :: work(:)
   integer                :: lwork
 
 ! External routines from the BLAS library
-   real*8 :: ddot
-   external :: ddot, dcopy  
+  real*8 :: ddot
+  external :: ddot, dcopy  
 
 ! Local variables
-   integer                        :: ipBCG_L, ipBCG_C
-   integer                        :: imatvec_L(1), iprevec_L(1), imatvec_C(1), iprevec_C(1) 
-   real*8                         :: resinit_L, resinit_C, prom, max_C_norm, prom_A(nvmax), x_coord, y_coord
-   real*8                         :: u_new(2,nvmax), L2_err, L2_resud, resudal_mass(4000)
-   integer                        :: num_iter, resudal_mass_index
-   real*8, allocatable            :: prom_m(:)
-   type(Matrix)                   :: A_matrix
-   real*8, allocatable            :: Big_G_anderson(:, :), Big_F_anderson(:, :), f_anderson(:, :), &
+  integer                        :: ipBCG_L, ipBCG_C
+  integer                        :: imatvec_L(1), iprevec_L(1), imatvec_C(1), iprevec_C(1) 
+  real*8                         :: resinit_L, resinit_C, prom, max_C_norm, prom_A(nvmax), x_coord, y_coord
+  real*8                         :: u_new(2,nvmax), L2_err, L2_resud, resudal_mass(4000)
+  integer                        :: num_iter, resudal_mass_index
+  real*8, allocatable            :: prom_m(:)
+  type(Matrix)                   :: A_matrix
+  real*8, allocatable            :: Big_G_anderson(:, :), Big_F_anderson(:, :), f_anderson(:, :), &
                                      gamma_coefficients(:), residual_pr(:)
-   real*8                         :: curr_res    
-   integer                        :: nPic             
-   Type(Matrix)                   :: Mass_VP, B_VP, lhs_VP    
+  real*8                         :: curr_res    
+  integer                        :: nPic             
+  Type(Matrix)                   :: Mass_VP, B_VP, lhs_VP    
    
-   real*8                         :: lhs_a(maxnz)
-   integer                        :: lhs_ia(maxn), lhs_ja(maxnz)  
-   real*8                         :: rhs_VP_1(nvmax), rhs_VP_2(nvmax)   
+  real*8                         :: lhs_a(maxnz)
+  integer                        :: lhs_ia(maxn), lhs_ja(maxnz)  
+  real*8                         :: rhs_VP_1(nvmax), rhs_VP_2(nvmax)   
    
    
-   real*8                         :: solution_vec_1(maxn), solution_vec_2(maxn)
+  real*8                         :: solution_vec_1(maxn), solution_vec_2(maxn)
    
    
    
    ! ILU data
-   real*8 :: tau1,tau2,partlur,partlurout
-   integer :: verb, UsedWr, UsedWi
+  real*8 :: tau1,tau2,partlur,partlurout
+  integer :: verb, UsedWr, UsedWi
 
 ! Local variables
-   integer :: imatvec_1(1), imatvec_2(1), iprevec_1(1), iprevec_2(1)
-   real*8 :: resinit_1, resinit_2     
+  integer :: imatvec_1(1), imatvec_2(1), iprevec_1(1), iprevec_2(1)
+  real*8 :: resinit_1, resinit_2     
    
 ! BiCGStab data
-   External :: prevec2
-   Integer :: ITER_1, ITER_2, INFO_1, INFO_2, NUNIT_1, NUNIT_2
-   Real*8 :: RESID_1, RESID_2
+  External :: prevec2
+  Integer :: ITER_1, ITER_2, INFO_1, INFO_2, NUNIT_1, NUNIT_2
+  Real*8 :: RESID_1, RESID_2
    
-   logical                    :: is_found
-   type(json_file)            :: json
-   real*8                     :: js1, js2, js3, js4
-   real*8       , allocatable :: js5(:)
-   character(len=32)          :: path_to_json
+   
+  !! json variables   
+  logical                        :: is_found
+  type(json_file)                :: json
+  character(len = strlen)        :: path_to_json
     
-   integer              :: Nbv, Nbl
-   real*8, allocatable  :: bv(:, :)
-   integer, allocatable :: bl(:, :)
-   real*8               :: bltail(2,12)
-   
-   real*8, allocatable  :: bv_in(:)
-   integer, allocatable :: bl_in(:)
-   real*8, allocatable  :: bltail_in(:)   
     
+  !! grid variables 
+  integer                        :: Nbv, Nbl
+  double precision, allocatable  :: bv(:, :)
+  integer, allocatable           :: bl(:, :)
+  double precision, allocatable  :: bltail(:,:)
    
-  time_step = hour/4d0
-  time = 0d0  
-  num = 0
+  double precision, allocatable  :: bv_in(:)
+  integer, allocatable           :: bl_in(:)
+  double precision,allocatable   :: bltail_in(:)
+   
+  
+  !! pathes to different folders
+  character(len=:), allocatable  :: path_to_triangles
+  character(len=:), allocatable  :: path_to_nodals
+  character(len=:), allocatable  :: path_to_graphics
   
   
-  !!! read grid information from json file
+  !! boundary type 
+  character(:), allocatable      :: boundary_type
+  
+  !! triangulation parameters
+  real*8                  :: square_size
+  integer                 :: number_of_vertex_per_square_edge
+         
+         
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!        
+  
+  !! read everything from .json file
   
   call json%initialize()
   
   call get_command_argument(1, path_to_json)
+  if (len_trim(path_to_json) == 0) stop "no path to .json file!"
   
   call json%load(filename = trim(path_to_json))
+  if (json%failed()) stop "failed to load .json!"
+  
+  call json%get('time step in hours', time_step, is_found)
+  if (.not. is_found) stop "no value of time step!"
     
-  call json%get('Nbv', Nbv, is_found); if (.not. is_found) stop 1
-  call json%get('Nbl', Nbl, is_found); if (.not. is_found) stop 1
+  call json%get('number of boundary nodes', Nbv, is_found)
+  if (.not. is_found) stop "no value of number of boundary nodes!"
+  
+  call json%get('number of boundary edges', Nbl, is_found)
+  if (.not. is_found) stop "no value of number of boundary edges!"
+  
   allocate(bv_in(2*Nbv))
   allocate(bl_in(7*Nbl))
-  allocate(bv(2,Nbv))
-  allocate(bl(7,Nbl))
-  call json%get('bv',  bv_in, is_found); if (.not. is_found) stop 1
-  call json%get('bl',  bl_in, is_found); if (.not. is_found) stop 1
-  call json%get('bltail',  bltail_in, is_found); if (.not. is_found) stop 1
+  allocate(bltail_in(24))
   
-  do i = 1, Nbv
+  call json%get('square size', square_size, is_found)
+  if (.not. is_found) stop "no value of square size!"
   
-    bv(:,i) = bv_in((i-1)*2 +1 : i*2)
+  call json%get('number of grid verticies per square edge', number_of_vertex_per_square_edge, is_found)
+  if (.not. is_found) stop "no value of number of grid verticies per square edge!"
   
-  end do
+  call json%get('boundary nodes', bv_in, is_found)
+  if (.not. is_found) stop "no value of boundary nodes!"
   
-  do i  = 1, Nbl
+  call json%get('boundary edges connectivity list', bl_in, is_found)
+  if (.not. is_found) stop "no value of boundary edges connectivity list!"
   
-    
+  call json%get('curved boundary list', bltail_in, is_found)
+  if (.not. is_found) stop "no value of curved boundary list!"
   
-  end do
-    
- ! bl = bl_in
- ! bltail = bltail_in
+  call json%get('path to graphics folder', path_to_graphics, is_found)
+  if (.not. is_found) stop "no value of path to graphics folder!"
+  
+  call json%get('path to triangles folder', path_to_triangles, is_found)
+  if (.not. is_found) stop "no value of path to triangles folder!"
+  
+  call json%get('path to nodals folder', path_to_nodals, is_found)
+  if (.not. is_found) stop "no value of path to nodals folder!"
+  
+  call json%get('velocity boundary condition', boundary_type, is_found)
+  if (.not. is_found) stop "no value of velocity boundary type!"
+  
   
   call json%destroy()
   
-  call initialization(Nbv, Nbl, square_size*bv, bl, bltail)
+  print *, ".Json reading: done"
+  
+  !!!  grid initialization
+  
+  
+  allocate(bv(2,Nbv))
+  allocate(bl(7,Nbl))
+  allocate(bltail(2,12))
+  
+  bv = reshape(bv_in, shape(bv))
+  bl = reshape(bl_in, shape(bl))
+  
+  bltail = reshape(bltail_in, shape(bltail))
+  
+  do i = 1, 2
+    do j = 1, Nbv
+      bv(i,j) = bv(i,j)*square_size
+    end do
+  end do  
+  
+  call grid_initialization( &
+  Nbv, Nbl, bv, bl, bltail, number_of_vertex_per_square_edge, square_size)
   
   deallocate(bv)
   deallocate(bl)
+  deallocate(bltail)
+  
   deallocate(bv_in)
   deallocate(bl_in)
+  deallocate(bltail_in)
   
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  print *, "Grid generating: done"
   
-  allocate(prom_m(number_of_elements))
+  !!! scalars, vectors, forcing initialization
   
+  call vectors_initialization(boundary_type)
+  call scalars_initialization()
+  call wind_forcing_initialization(boundary_type)
+  call water_forcing_initialization(boundary_type)
   
+  print *, "External forcing setup: done"
   
-  allocate(solution_anderson(number_of_non_Direchlet_elements*2))
-  allocate(residuals_anderson(m_Anderson + 1, number_of_non_Direchlet_elements*2))
-  allocate(g_anderson(m_Anderson + 1, number_of_non_Direchlet_elements*2))
-  allocate(f_anderson(m_Anderson + 1, number_of_non_Direchlet_elements*2))
-  allocate(init_resid(number_of_non_Direchlet_elements*2))
-  allocate(new_sol(number_of_non_Direchlet_elements*2))
-  allocate(Big_G_anderson(m_Anderson, number_of_non_Direchlet_elements*2))
-  allocate(Big_F_anderson(m_Anderson, number_of_non_Direchlet_elements*2))
-  allocate(rhs_Anderson(2*number_of_non_Direchlet_elements))
-  allocate(work(2*number_of_non_Direchlet_elements*m_Anderson))
-  allocate(new_residual(2*number_of_non_Direchlet_elements))
-  allocate(new_g(2*number_of_non_Direchlet_elements))
-  allocate(gamma_coefficients(m_Anderson + 1))
-  allocate(residual_pr(num_anderson_iterations*20))
+  !!! setup time step in seconds
   
-  solution_anderson = 0d0
-  residuals_anderson = 0d0
-  g_anderson = 0d0
-  init_resid = 0d0
-  lwork = 2*number_of_non_Direchlet_elements
+  time_step = time_step*hour
   
+  print *, "Time step setup: done"
   
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!    Assembling non-Direchlet (phi, phi) matrix and lumped matrix     !!
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!! Assembling non-Direchlet matrix and non-Direchlet lumped matrix
   
-  call non_Direchlet_mass_matrix_assembling(List_of_non_Direchlet_Elements, number_of_non_Direchlet_elements, &
-   ND_mass_matrix)
+  call non_Direchlet_mass_matrix_assembling()
+  call non_Direchlet_mass_matrix_lumped_assembling()
    
-  call ND_mass_matrix_lum%init(ND_mass_matrix%nonzero, ND_mass_matrix%matr_size_x, ND_mass_matrix%matr_size_y)  
-  call Matr1_eqv_Matr2(ND_mass_matrix_lum, ND_mass_matrix) 
+  print *, "Assembling ND and lumped ND mass matrix: done"
   
-  call lumping_square(ND_mass_matrix_lum)
+  !!! Assembling  M_L and M_C in CSR format for transport equation
   
-  print *, "Assembling non-Direchlet and lumped matrix in CSR: done"
+  call transport_mass_matrix_low_order_assembling(time_step)
+  call transport_mass_matrix_high_order_assembling(time_step)
   
-  
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!       Assembling  M_L in CSR format for transport equation           !!
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  print *, "Assembling mass matricies for transport: done"
   
   
-  call mass_matrix_low_order_assembling(mass_matrix_low, List_of_Elements, &
-   number_of_elements, time_step) 
-   
-  
-  print *, "M_L assembling in CSR: done"
-  
-  
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!       Assembling  M_C in CSR format                !!
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
-  call mass_matrix_high_order_assembling(mass_matrix_high, List_of_Elements, &
-   number_of_elements, time_step)
-    
-  
-  print *, "M_C assembling in CSR: done"
-  
-  !!!!!!!!!!!!!!!!!!!
-  !! Time stepping !!
-  !!!!!!!!!!!!!!!!!!!
+  !!! Time stepping 
   
   do i = 1, number_of_triangles
   
@@ -245,331 +272,119 @@ program Main
   
   do while (num < num_time_steps)
   
+    !!! wind and water setup
+  
+    do i = 1, number_of_non_Direchlet_elements
+    
+      x_coord = List_of_non_Direchlet_Elements(i)%pointing_element%coordinates(1)
+      y_coord = List_of_non_Direchlet_Elements(i)%pointing_element%coordinates(2)
+    
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_air(1) = 5d0 + &
+       (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*x_coord/square_size)*dsin(pi*y_coord/square_size)
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_air(2) = 5d0 + &
+       (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*y_coord/square_size)*dsin(pi*x_coord/square_size)
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_water(1) = &
+       (2d0*y_coord - 1d6)/(10d0*square_size)
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_water(2) = &
+       -(2d0*x_coord - 1d6)/(10d0*square_size)  
+       
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) = &
+      List_of_non_Direchlet_Elements(i)%pointing_element%u(1)
+      
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) = &
+      List_of_non_Direchlet_Elements(i)%pointing_element%u(2) 
+       
+    
+    end do
+    
+    !! compute initial residual each time step
+    
+    init_resid = init_residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, &
+      List_of_Triangles, number_of_non_Direchlet_elements, number_of_triangles, time_step, 0)
+  
+  
+    num_iter = 1
+    
+    call dot_epsilon_delta_recalculation(List_of_Triangles, number_of_triangles, 2)
+    call P_0_recalculation(List_of_Triangles, number_of_triangles)
+    
+    !! mEVP-stepping
+    
+    do while((num_iter < (N_evp+1)))
+    
+      call dot_epsilon_delta_recalculation(List_of_Triangles, number_of_triangles, 1)
+      call P_0_recalculation(List_of_Triangles, number_of_triangles)
+      
+      !!! sigma recalculation
+    
+      do i = 1, number_of_Triangles
+      
+        List_of_Triangles(i)%sigma1 = &
+         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma1 + &
+         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon1 - &
+         List_of_Triangles(i)%delta)* &
+         (List_of_Triangles(i)%P_0)/ &
+         (List_of_Triangles(i)%delta + delta_min)
+         
+        List_of_Triangles(i)%sigma2 = &
+         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma2 + &
+         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon2)* &
+         (List_of_Triangles(i)%P_0)/ &
+         ((List_of_Triangles(i)%delta + delta_min)*e**2)
+         
+        List_of_Triangles(i)%sigma12 = &
+         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma12 + &
+         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon12)* &
+         (List_of_Triangles(i)%P_0)/ &
+         ((List_of_Triangles(i)%delta + delta_min)*e**2) 
+         
+      end do
+      
+      call velocity_recalculation(List_of_non_Direchlet_Elements, number_of_non_Direchlet_elements, &
+       ND_mass_matrix_lum, time_step)
+      
       do i = 1, number_of_non_Direchlet_elements
-      
-        x_coord = List_of_non_Direchlet_Elements(i)%pointing_element%coordinates(1)
-        y_coord = List_of_non_Direchlet_Elements(i)%pointing_element%coordinates(2)
-      
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_air(1) = 5d0 + &
-         (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*x_coord/L)*dsin(pi*y_coord/L)
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_air(2) = 5d0 + &
-         (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*y_coord/L)*dsin(pi*x_coord/L)
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_water(1) = &
-         (2d0*y_coord - 1d6)/(10d0*L)
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_water(2) = &
-         -(2d0*x_coord - 1d6)/(10d0*L)  
-         
-      
-      end do
-      
-      num_iter = 0 
-      
-      init_resid = init_residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, &
-        List_of_Triangles, number_of_non_Direchlet_elements, number_of_triangles, time_step, 0)
-     
-      !!!!!!!!!!!!!!!! update first m_Anderson+1 f and g using implicit VP Picard iterations !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      do npic = 1, N_Picard
-      
-         call velocity_delta_str_P_recalculation(List_of_non_Direchlet_Elements, List_of_Triangles, &
-            number_of_non_Direchlet_elements, number_of_triangles, npic)
-            
-         call VP_Mass_assembling(List_of_non_Direchlet_Elements, number_of_non_Direchlet_elements, &
-            Mass_VP, ND_mass_matrix_lum, time_step)    
-            
-         call VP_B_assembling(List_of_non_Direchlet_Elements, number_of_non_Direchlet_elements, &
-            B_VP)   
-            
-         call aplb(number_of_non_Direchlet_elements, number_of_non_Direchlet_elements, &
-          1, Mass_VP%a, Mass_VP%ja, Mass_VP%ia, B_VP%a , B_VP%ja, B_VP%ia, lhs_a, lhs_ja, lhs_ia, &
-          maxnz, iw, ierr)   
-          
-         call lhs_VP%init(lhs_ia(number_of_non_Direchlet_elements+1)-1, number_of_non_Direchlet_elements, &
-          number_of_non_Direchlet_elements)
-          lhs_VP%ia(1:(lhs_VP%matr_size_x+1)) = lhs_ia(1:(lhs_VP%matr_size_x+1))
-          lhs_VP%ja(1:lhs_VP%nonzero) = lhs_ja(1:lhs_VP%nonzero)
-          lhs_VP%a(1:lhs_VP%nonzero) = lhs_a(1:lhs_VP%nonzero) 
-          
-          
-         call VP_rhs_assembling(List_of_non_Direchlet_Elements, number_of_non_Direchlet_elements, rhs_VP_1, &
-              rhs_VP_2, ND_mass_matrix_lum, time_step) 
-              
-              
-              
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          !!  Initialization of the preconditioner  !!
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          
-          verb = 0 ! verbose no
-          tau1 = 1d-2
-          tau2 = 1d-3
-          partlur = 0.5
-          ierr = 0
-
-          call iluoo(number_of_non_Direchlet_elements, lhs_VP%ia, lhs_VP%ja, lhs_VP%a, tau1, tau2, verb, &
-                rW, iW, MaxWr, MaxWi, partlur, partlurout, &
-                UsedWr, UsedWi, ierr)
-           
-          ipBCG = UsedWr + 1 
-           
-          !set initial guess to 0
-          call dcopy(number_of_non_Direchlet_elements,0d0,0,solution_vec_1,1)
-          call dcopy(number_of_non_Direchlet_elements,0d0,0,solution_vec_2,1)
-
-          !compute initial residual norm for 1 system
-          resinit_1 = ddot(number_of_non_Direchlet_elements,rhs_VP_1,1,rhs_VP_1,1)
-          resinit_1 = dsqrt(resinit_1)
-           
-           
-          !compute initial residual norm for 2 system
-          resinit_2 = ddot(number_of_non_Direchlet_elements,rhs_VP_2,1,rhs_VP_2,1)
-          resinit_2 = dsqrt(resinit_2)     
-          
-          
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          !!     Iterative solution    !!
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
-          
-          ITER_1 = 1000             
-          RESID_1 = 1d-20*resinit_1  
-          INFO_1  = 0               
-          NUNIT_1 = 6               
-          iprevec_1(1) = number_of_non_Direchlet_elements           
-          imatvec_1(1) = number_of_non_Direchlet_elements  
-           
-          ITER_2 = 1000             
-          RESID_2 = 1d-20*resinit_2  
-          INFO_2  = 0               
-          NUNIT_2 = 6               
-          iprevec_2(1) = number_of_non_Direchlet_elements           
-          imatvec_2(1) = number_of_non_Direchlet_elements             
-          
-          call slpbcgs( &
-              prevec2, iprevec_1, iW,rW, &
-              matvec,  imatvec_1, lhs_VP%ia, lhs_VP%ja, lhs_VP%a, &
-              rW(ipBCG), number_of_non_Direchlet_elements, 8, &
-              number_of_non_Direchlet_elements, rhs_VP_1, solution_vec_1, &
-              ITER_1, RESID_1, &
-              INFO_1, NUNIT_1)
-                    
-          call slpbcgs( &
-             prevec2, iprevec_2, iW,rW, &
-             matvec,  imatvec_2, lhs_VP%ia, lhs_VP%ja, lhs_VP%a, &
-             rW(ipBCG), number_of_non_Direchlet_elements, 8, &
-             number_of_non_Direchlet_elements, rhs_VP_2, solution_vec_2, &
-             ITER_2, RESID_2, &
-             INFO_2, NUNIT_2)    
-              
-          do i = 1, number_of_non_Direchlet_elements
-           
-            solution_anderson(i) = solution_vec_1(i)
-            solution_anderson(number_of_non_Direchlet_elements + i) = solution_vec_2(i)
-            
-            List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1) = solution_vec_1(i)
-            List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2) = solution_vec_2(i)
-            
-            List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) = solution_vec_1(i)
-            List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) = solution_vec_2(i)
-            
-             
-          end do   
-          
-          !!!!!!!!!!! update f and g  !!!!!!!!!!!!!!!!
-          
-          
-          if (npic .ge. m_Anderson) then
-        
-          do i = 1, m_Anderson
-          
-            residuals_anderson(i, :) = residuals_anderson(i+1, :)
-            g_anderson(i, :) =  g_anderson(i+1, :) 
-          
-          end do
-          
-          
-          residuals_anderson(m_Anderson + 1, :) = residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, List_of_Triangles, &
-              number_of_non_Direchlet_elements, number_of_triangles, time_step, 0)
-              
-          g_anderson(m_Anderson + 1, :) = solution_anderson - &
-          alpha_Anderson*(1d0/L2_norm(init_resid, 2*number_of_non_Direchlet_elements))*residuals_anderson(m_Anderson + 1, :)   
-          
-        
-        else
-        
-          residuals_anderson(npic, :) = residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, List_of_Triangles, &
-              number_of_non_Direchlet_elements, number_of_triangles, time_step, 0)
-              
-          g_anderson(npic, :) =  solution_anderson - &
-          alpha_Anderson*(1d0/L2_norm(init_resid, 2*number_of_non_Direchlet_elements))*residuals_anderson(npic, :)
-        
-        end if
-                  
-          print *, npic, L2_norm(residuals_anderson(npic, :), 2*number_of_non_Direchlet_elements)/  &
-          L2_norm(init_resid, 2*number_of_non_Direchlet_elements)   
-            
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-            
-            
-         call B_VP%distr()
-         call Mass_VP%distr()
-         call lhs_VP%distr()   
-         
-         
-         ipBCG = 0
-          UsedWr = 0
-          
-          do i = 1, number_of_non_Direchlet_elements
-          
-            rhs_VP_1(i) = 0d0
-            rhs_VP_2(i) = 0d0
-          
-          end do
-          
-          do i = 1, MaxWr
-          
-            rW(i) = 0d0    
-          
-          end do
-          
-          do i = 1, MaxWi
-          
-            iW(i) = 0
-          
-          end do
-      
-      end do
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-     
-   
-      !!!!!     Anderson iterations !!!!!
-      
-      num_iter = 1
-      
-      curr_res = L2_norm(f_anderson(m_Anderson + 1, :), 2*number_of_non_Direchlet_elements)
-      previous_res = L2_norm(f_anderson(m_Anderson, :), 2*number_of_non_Direchlet_elements)
-   
-      do while(num_iter < num_anderson_iterations)!((curr_res/previous_res) > 1d-3) .and. (num_iter < 500)) !num_iter < num_anderson_iterations)
-        
-        previous_res = curr_res
-        
-        m_k = m_Anderson!min(m_Anderson, num_iter)
-        
-        !! form matrix Big_G and Big_F
-        
-        do i = 1, m_k
-        
-          Big_G_anderson(i, :) =  g_anderson(i + 1, :) - g_anderson(i, :)
-          Big_F_anderson(i, :) =  f_anderson(i + 1, :) - f_anderson(i, :)
-        
-        end do
-        
-        !! set rhs equals to f_k
-        
-        rhs_Anderson = residuals_anderson(m_k+1, :)
-        
-        !! Solve new least square problem
+  
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1) = &
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_new(1)
     
-        !call dgels(	"N", &
-        !   2*number_of_non_Direchlet_elements, &
-        !   m_k, &
-        !   1, &
-        !   Big_F_anderson, &
-        !   2*number_of_non_Direchlet_elements, &
-        !   rhs_Anderson, &
-        !   2*number_of_non_Direchlet_elements, &
-        !   work, &
-        !   lwork, &
-        !   info)	
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2) = &
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_new(2)
+       
+        
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) = &
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1)
     
-         !! Gamma coefficients calculation
-         
-         do i = 1, m_k
-    
-            gamma_coefficients(i) = rhs_Anderson(i)
-    
-         end do
-        
-        !! Update new solution
-        
-        solution_anderson = g_anderson(m_k+1, :)
-        
-        do i = 1, m_k
-        
-          solution_anderson = solution_anderson - gamma_coefficients(i)*Big_G_anderson(i, :)
-        
-        end do 
-        
-        !! claculate new f and g
-        
-        do i = 1, number_of_non_Direchlet_elements
-      
-              List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) = solution_anderson(i)
-              List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) = &
-               solution_anderson(i + number_of_non_Direchlet_elements)
-      
-        end do
-        
-        new_residual = residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, List_of_Triangles, &
-              number_of_non_Direchlet_elements, number_of_triangles, time_step, 0)
-              
-        new_g = solution_anderson - alpha_Anderson* &
-        (1d0/(L2_norm(init_resid, 2*number_of_non_Direchlet_elements)))*new_residual
-        
-        !! Update f and g matrix
-        
-        !if (num_iter .ge. m_Anderson) then
-        
-          do i = 1, m_Anderson
-          
-            residuals_anderson(i, :) = residuals_anderson(i+1, :)
-            g_anderson(i, :) =  g_anderson(i+1, :) 
-          
-          end do
-          
-          
-          
-        residuals_anderson(m_Anderson + 1, :) = new_residual
-              
-        g_anderson(m_Anderson + 1, :)  = new_g
-        
-        !! print residual 
-        
-        residual_pr(num_iter) = L2_norm(new_residual, 2*number_of_non_Direchlet_elements) &
-         /L2_norm(init_resid, 2*number_of_non_Direchlet_elements)
-         
-        curr_res = L2_norm(new_residual, 2*number_of_non_Direchlet_elements)
-        
-        print *, "iter num", num_iter, "residual:", residual_pr(num_iter)
-        !print *, "curr/prev", num_iter, curr_res/previous_res
-         
-         
-          
-        num_iter = num_iter + 1  
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) = &
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2)
         
       end do
       
+      residual_array(num_iter) = L2_norm(residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, List_of_Triangles, &
+           number_of_non_Direchlet_elements, number_of_triangles, time_step, 0), 2*number_of_non_Direchlet_elements)/ &
+           L2_norm(init_resid, 2*number_of_non_Direchlet_elements)
       
-      call print_resudal(residual_pr, num_iter-1, num)
+      print *, "iter", num_iter !, residual_array(num_iter)
       
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      num_iter = num_iter + 1
         
+    end do
+      
+      !call print_resudal(residual_array, N_evp, num)  
+        
+      
+      print *, "max_u:", maximum_u(List_of_Elements, number_of_elements)
       
       do i = 1, number_of_non_Direchlet_elements
       
         List_of_non_Direchlet_Elements(i)%pointing_element%u(1) = &
-         solution_anderson(i)
+         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1)
          
         List_of_non_Direchlet_Elements(i)%pointing_element%u(2) = &
-         solution_anderson(number_of_non_Direchlet_elements + i)
+         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2) 
       
       end do
-      
-      print *, "max_u:", maximum_u(List_of_Elements, number_of_elements)
-      
-      call triangles_values_calculations(List_of_Triangles, number_of_triangles)
-      
+       
       
       
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -810,9 +625,9 @@ program Main
       
       print *, "time moment: ", time/hour , "hours"
       
-      call plot_ParaView(List_of_Elements, List_of_Triangles, number_of_elements, number_of_triangles, num)
-      call write_nodals(List_of_Elements, number_of_elements, num)
-      call write_triangles(List_of_Triangles, number_of_triangles, num)
+      call plot_ParaView(num, path_to_graphics)
+      call write_nodals(num, path_to_nodals)
+      call write_triangles(num, path_to_triangles)
       
       
       print *, "iteration: ", num

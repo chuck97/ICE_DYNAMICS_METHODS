@@ -22,16 +22,6 @@ cd resudal
 rm *.txt
 echo 6
 cd ..
-cd values
-cd nodals 
-rm *.txt
-echo 7
-cd ..
-cd triangles
-rm *.txt
-echo 8
-cd ..
-cd ..
 cd src
 gfortran -fPIC -g -Wline-truncation -fcheck=all -c Classes.f95 Constants.f95 Numerical_integration.f95 Grid.f95 Assembling.f95 Matricies.f95 Flux_correction.f95 Dynamics.f95 Main.f95
 echo 9
