@@ -1,0 +1,27 @@
+{
+	"time step in hours": 1.0E-1,
+	"number of boundary nodes": 4,
+	"number of boundary edges": 4,
+	"square size in meters": 1.0E+6,
+	"number of grid verticies per square edge": 50,
+	"boundary nodes coordinates unit size":[
+	0., 0.,
+	0., 1.,
+	1., 1.,
+	1., 0.
+    ],
+    "boundary edges connectivity list":[
+    1,2,0,-1,1,1,0,
+    2,3,0,-1,2,1,0,   
+    3,4,0,-1,3,1,0, 
+    4,1,0,-1,4,1,0
+    ],
+    "curved boundary list": [
+    0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 
+    0,0, 0,0, 0,0, 0,0
+    ],
+    "path to graphics folder": "./graphics/",
+    "path to triangles folder": "./values/triangles/",
+    "path to nodals folder": "./values/nodals/",
+    "velocity boundary condition": "sticking"
+}
