@@ -126,9 +126,12 @@ module module_assembling
         a(r) = a(r) + & 
         scalar_multiplication(phi_times_phi, List_of_Elements(i)%neighbour_elements_list(j)%pointing_element, &
              List_of_Elements(i))
+             
+             
         if (abs(a(r)) > varepsilon) then
           ja(r) = List_of_Elements(i)%neighbour_elements_list(j)%pointing_element%identificator
           nonzero_raw = nonzero_raw + 1
+          a(r) = a(r)
           r = r + 1     
         end if  
       end do
@@ -220,7 +223,7 @@ module module_assembling
     implicit none
     
     !!arguments:
-    real*8,intent(in)    :: time_step
+    real*8, intent(in)    :: time_step
    
     !!local variables:
     integer              :: i, j, k
@@ -240,8 +243,14 @@ module module_assembling
         5d-1*(time_step**2)*List_of_Elements(i)%neighbour_elements_list(j)%pointing_element%element_value* &
         scalar_multiplication(u_nabla_u_phi_nabla_phi, List_of_Elements(i)%neighbour_elements_list(j)%pointing_element, &
          List_of_Elements(i))
+         
+         transport_right_hand_high_order(i) = transport_right_hand_high_order(i)
+         
       end do
     end do
+    
+    !print *,  time_step*scalar_multiplication(u_phi_times_grad_phi, List_of_Elements(6)%neighbour_elements_list(1)%pointing_element, &
+    !     List_of_Elements(6))
     
   end subroutine transport_right_hand_high_order_assembling
 

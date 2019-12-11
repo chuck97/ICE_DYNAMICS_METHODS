@@ -347,6 +347,11 @@ program Main
         solution_vec_L(k) = Right_hand_L(k)/mass_matrix_low%a(k) 
       
       end do
+      
+      do k = 1, 100
+        print *, solution_vec_L(k)
+      end do
+      
           
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!     Iterative solution for M_C  (m)   !!

@@ -106,7 +106,7 @@ module module_classes
      real*8                                       :: u(2)                                                  
      real*8                                       :: u_old(2)                                              
      real*8                                       :: u_water(2)
-     real*8                                       :: u_resuid(2)                                           
+     real*8                                       :: u_resid(2)                                           
      real*8                                       :: u_air(2)
      real*8                                       :: u_new(2)
      real*8                                       :: m                                                     

@@ -147,7 +147,9 @@ module module_numerical_integration
     return_value = (a_u*x + b_u*y + c_u)*(a_u*x + b_u*y + c_u)*a1*a2 + &
      (a_u*x + b_u*y + c_u)*(a_v*x + b_v*y + c_v)*b1*a2 + &
      (a_u*x + b_u*y + c_u)*(a_v*x + b_v*y + c_v)*a1*b2 + &
-     (a_v*x + b_v*y + c_v)*(a_v*x + b_v*y + c_v)*b1*b2
+     (a_v*x + b_v*y + c_v)*(a_v*x + b_v*y + c_v)*b1*b2 + &
+     (a1*x + b1*y + c1)*(a_u + b_v)*(a2*(a_u*x + b_u*y + c_u) + b2*(a_v*x + b_v*y + c_v))
+     
   
   end function u_nabla_u_phi_nabla_phi
   
@@ -435,6 +437,7 @@ function scalar_multiplication(f, element1, element2) result(multiplication_resu
                 
                coefficients_u = u_coefficients_calculation(element1%neighbour_triangles_list(i)%pointing_triangle, 1)
                coefficients_v = u_coefficients_calculation(element1%neighbour_triangles_list(i)%pointing_triangle, 2) 
+               
                 
                multiplication_result = multiplication_result + integral_over_triangle( &
                element1%neighbour_triangles_list(i)%pointing_triangle%coordinates(1,1), &

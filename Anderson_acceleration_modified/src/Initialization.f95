@@ -1,4 +1,4 @@
-module initialization_module
+module module_initialization
 
   use module_Classes
   use module_constants
@@ -430,7 +430,7 @@ end subroutine grid_initialization
     
     do i = 1, number_of_elements
       if (List_of_Elements(i)%on_boundary) then
-        if (trim(boundary_type) == "cling") then
+        if (trim(boundary_type) == "sticking") then
           List_of_Elements(i)%u_air(1) = 0d0
           List_of_Elements(i)%u_air(2) = 0d0
         end if
@@ -467,4 +467,4 @@ end subroutine grid_initialization
   
   end subroutine water_forcing_initialization
   
-end module initialization_module  
+end module module_initialization

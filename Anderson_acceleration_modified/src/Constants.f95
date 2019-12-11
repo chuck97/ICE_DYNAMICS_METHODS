@@ -36,6 +36,5 @@ module module_constants
   integer, parameter   :: strlen = 40                                                  ! length of strings  
   integer, parameter   :: max_number_of_diagonals  = 15                                ! max number of diagonals in sparse matricies    
   integer, parameter   :: N_evp = 300
-  
 
 end module module_constants

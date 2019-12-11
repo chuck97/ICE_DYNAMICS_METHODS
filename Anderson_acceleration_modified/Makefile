@@ -2,7 +2,7 @@
 FC = gfortran
 
 # objectives
-OBJS = $(addprefix $(OBJ_DIR)/,Main.o Initialization.o PlotWrite.o Grid_values.o Matricies.o Numerical_integration.o Constants.o Classes.o Assembling.o Flux_correction.o Dynamics.o)
+OBJS = $(addprefix $(OBJ_DIR)/,Main.o Initialization.o PlotWrite.o Grid_values.o Matricies.o Numerical_integration.o Constants.o Classes.o Assembling.o Flux_correction.o Dynamics.o Linear_system_solver.o Advection.o)
 
 # linker options
 LINKER = $(FC) -o 
@@ -91,12 +91,14 @@ cleanall: clean cleangraphics cleanresiduals cleanresults
 # dependency chains	
 $(OBJ_DIR)/Constants.o                 :: $(SRC_DIR)/Constants.f95
 $(OBJ_DIR)/Classes.o                   :: $(SRC_DIR)/Classes.f95
+$(OBJ_DIR)/Linear_system_solver.o      :: $(SRC_DIR)/Linear_system_solver.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o)
 $(OBJ_DIR)/Grid_values.o               :: $(SRC_DIR)/Grid_values.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o)
 $(OBJ_DIR)/Initialization.o            :: $(SRC_DIR)/Initialization.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o)
 $(OBJ_DIR)/PlotWrite.o                 :: $(SRC_DIR)/Initialization.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o)
 $(OBJ_DIR)/Numerical_integration.o     :: $(SRC_DIR)/Numerical_integration.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o)	
 $(OBJ_DIR)/Matricies.o                 :: $(SRC_DIR)/Matricies.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o)
 $(OBJ_DIR)/Assembling.o                :: $(SRC_DIR)/Assembling.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o Matricies.o)
-$(OBJ_DIR)/Flux_correction.o           :: $(SRC_DIR)/Flux_correction.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o)
+$(OBJ_DIR)/Flux_correction.o           :: $(SRC_DIR)/Flux_correction.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o Assembling.o)
 $(OBJ_DIR)/Dynamics.o                  :: $(SRC_DIR)/Dynamics.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Matricies.o Numerical_integration.o Grid_values.o Assembling.o)
-$(OBJ_DIR)/Main.o                      :: $(SRC_DIR)/Main.f95 $(addprefix $(OBJ_DIR)/, Constants.o Classes.o Matricies.o Numerical_integration.o Dynamics.o Grid_values.o Initialization.o PlotWrite.o Flux_correction.o Assembling.o)
+$(OBJ_DIR)/Advection.o                 :: $(SRC_DIR)/Advection.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Linear_system_solver.o Flux_correction.o Assembling.o Grid_values.o Dynamics.o Matricies.o)
+$(OBJ_DIR)/Main.o                      :: $(SRC_DIR)/Main.f95 $(addprefix $(OBJ_DIR)/, Constants.o Classes.o Dynamics.o Grid_values.o Initialization.o PlotWrite.o Assembling.o Advection.o)

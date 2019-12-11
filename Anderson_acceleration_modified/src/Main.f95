@@ -1,113 +1,42 @@
 program Main
   
-  use module_Classes
-  use initialization_module
+  use module_classes
+  use module_initialization
   use module_grid_values
-  use module_numerical_integration
-  use module_flux_correction
   use module_constants
   use module_assembling
   use module_dynamics
-  use module_matricies
   use module_plotwrite
-  
+  use module_advection
   use json_module
       
   
   implicit none
   
-  !! global time step, current time
-  real*8 :: time_step, time
+  !! global time step, current time:
+  real*8                         :: time_step, time
+  real*8                         :: squ, max_u
+  integer                        :: num_iter, resudal_mass_index 
+  real*8, allocatable            :: init_resid(:)
   
-  real*8 :: squ, max_u  
   
-  integer :: i, j, k, num, s, r, ps
+  !! mEVP variables
   
-  real*8, allocatable                                  :: solution_anderson(:)
-  real*8                                               :: previous_res
-
-
-! Maximum size of matrix and the maximum number of non-zero entries
-  integer :: ide, nonzero_raw_L, nonzero_L, nonzero_raw_C, nonzero_C, m_k
-  real*8 , allocatable                                :: rhs_Anderson(:)
-
-! Arrays for the matrix sparse row (CSR) format
-  real*8 :: Right_hand_C(maxn), Right_hand_L(maxn), &
-     solution_vec_L(maxn), solution_vec_C(maxn), solution_vec(maxn), sum_mass, sum_concentration
-  type(Matrix) :: mass_matrix_high, mass_matrix_low, ND_mass_matrix, ND_mass_matrix_lum, &
-    N_xx, N_xy, N_yx, N_yy 
-    
-  real*8, dimension(:,:), allocatable :: residuals_anderson, solutions_anderson, g_anderson
-  real*8, allocatable                 :: init_resid(:)
-  real*8, allocatable                 :: new_sol(:), new_g(:), new_residual(:)
-
-! Work arrays for ILU factors and 8 BCG vectors
+  real*8                         :: x_coord, y_coord
   
-  integer, parameter :: MaxWr=maxnz+8*maxn, MaxWi=maxnz+10*maxn+1
-  real*8 :: rW(MaxWr)
-  integer :: iW(MaxWi)   
-   
-! ILU0 data
-  integer :: ierr, ipaLU, ipjLU, ipjU, ipiw   
-   
-! Local variables
-  integer :: ipBCG   
-   
-! BiCGStab data
-  External :: matvec, prevec0
-  Integer :: ITER, INFO, NUNIT
-  Real*8 :: RESID
-   
-  integer, allocatable   :: work(:)
-  integer                :: lwork
+  !! local variables:
+  integer                        :: i, j, k, num, s, r, ps
 
-! External routines from the BLAS library
-  real*8 :: ddot
-  external :: ddot, dcopy  
-
-! Local variables
-  integer                        :: ipBCG_L, ipBCG_C
-  integer                        :: imatvec_L(1), iprevec_L(1), imatvec_C(1), iprevec_C(1) 
-  real*8                         :: resinit_L, resinit_C, prom, max_C_norm, prom_A(nvmax), x_coord, y_coord
-  real*8                         :: u_new(2,nvmax), L2_err, L2_resud, resudal_mass(4000)
-  integer                        :: num_iter, resudal_mass_index
-  real*8, allocatable            :: prom_m(:)
-  type(Matrix)                   :: A_matrix
-  real*8, allocatable            :: Big_G_anderson(:, :), Big_F_anderson(:, :), f_anderson(:, :), &
-                                     gamma_coefficients(:), residual_pr(:)
-  real*8                         :: curr_res    
-  integer                        :: nPic             
-  Type(Matrix)                   :: Mass_VP, B_VP, lhs_VP    
-   
-  real*8                         :: lhs_a(maxnz)
-  integer                        :: lhs_ia(maxn), lhs_ja(maxnz)  
-  real*8                         :: rhs_VP_1(nvmax), rhs_VP_2(nvmax)   
-   
-   
-  real*8                         :: solution_vec_1(maxn), solution_vec_2(maxn)
-   
-   
-   
-   ! ILU data
-  real*8 :: tau1,tau2,partlur,partlurout
-  integer :: verb, UsedWr, UsedWi
-
-! Local variables
-  integer :: imatvec_1(1), imatvec_2(1), iprevec_1(1), iprevec_2(1)
-  real*8 :: resinit_1, resinit_2     
-   
-! BiCGStab data
-  External :: prevec2
-  Integer :: ITER_1, ITER_2, INFO_1, INFO_2, NUNIT_1, NUNIT_2
-  Real*8 :: RESID_1, RESID_2
-   
-   
+  !! Arrays for the matrix sparse row (CSR) format
+  real*8                         :: Right_hand_C(maxn), Right_hand_L(maxn), &
+                                   solution_vec_L(maxn), solution_vec_C(maxn), &
+                                   solution_vec(maxn), sum_mass, sum_concentration
+  
   !! json variables   
   logical                        :: is_found
   type(json_file)                :: json
   character(len = strlen)        :: path_to_json
-    
-    
+     
   !! grid variables 
   integer                        :: Nbv, Nbl
   real*8,           allocatable  :: bv(:, :)
@@ -118,31 +47,21 @@ program Main
   integer, allocatable           :: bl_in(:)
   real*8, allocatable            :: bltail_in(:)
    
-  
   !! pathes to different folders
   character(len=:), allocatable  :: path_to_triangles
   character(len=:), allocatable  :: path_to_nodals
   character(len=:), allocatable  :: path_to_graphics
   
-  
   !! boundary type 
   character(:), allocatable      :: boundary_type
   
   !! triangulation parameters
-  real*8                  :: square_size
-  integer                 :: number_of_vertex_per_square_edge
+  real*8                         :: square_size
+  integer                        :: number_of_vertex_per_square_edge
+ 
+ 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  START  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!        
          
-         
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!        
-  
   !! read everything from .json file
   
   call json%initialize()
@@ -166,13 +85,13 @@ program Main
   allocate(bl_in(7*Nbl))
   allocate(bltail_in(24))
   
-  call json%get('square size', square_size, is_found)
+  call json%get('square size in meters', square_size, is_found)
   if (.not. is_found) stop "no value of square size!"
   
   call json%get('number of grid verticies per square edge', number_of_vertex_per_square_edge, is_found)
   if (.not. is_found) stop "no value of number of grid verticies per square edge!"
   
-  call json%get('boundary nodes', bv_in, is_found)
+  call json%get('boundary nodes coordinates unit size', bv_in, is_found)
   if (.not. is_found) stop "no value of boundary nodes!"
   
   call json%get('boundary edges connectivity list', bl_in, is_found)
@@ -198,8 +117,7 @@ program Main
   
   print *, ".Json reading: done"
   
-  !!!  grid initialization
-  
+  !!  grid initialization
   
   allocate(bv(2,Nbv))
   allocate(bl(7,Nbl))
@@ -229,7 +147,7 @@ program Main
   
   print *, "Grid generating: done"
   
-  !!! scalars, vectors, forcing initialization
+  !! scalars, vectors, forcing initialization
   
   call vectors_initialization(boundary_type)
   call scalars_initialization()
@@ -238,20 +156,20 @@ program Main
   
   print *, "External forcing setup: done"
   
-  !!! setup time step in seconds
+  !! setup time step in seconds
   
   time_step = time_step*hour
   
   print *, "Time step setup: done"
   
-  !!! Assembling non-Direchlet matrix and non-Direchlet lumped matrix
+  !! Assembling non-Direchlet matrix and non-Direchlet lumped matrix
   
   call non_Direchlet_mass_matrix_assembling()
   call non_Direchlet_mass_matrix_lumped_assembling()
    
   print *, "Assembling ND and lumped ND mass matrix: done"
   
-  !!! Assembling  M_L and M_C in CSR format for transport equation
+  !! Assembling  M_L and M_C in CSR format for transport equation
   
   call transport_mass_matrix_low_order_assembling(time_step)
   call transport_mass_matrix_high_order_assembling(time_step)
@@ -259,7 +177,9 @@ program Main
   print *, "Assembling mass matricies for transport: done"
   
   
-  !!! Time stepping 
+  !! Time stepping 
+  
+  time = 0d0
   
   do i = 1, number_of_triangles
   
@@ -289,17 +209,16 @@ program Main
       List_of_non_Direchlet_Elements(i)%pointing_element%u_water(2) = &
        -(2d0*x_coord - 1d6)/(10d0*square_size)  
        
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) = &
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1) = &
       List_of_non_Direchlet_Elements(i)%pointing_element%u(1)
       
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) = &
+      List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2) = &
       List_of_non_Direchlet_Elements(i)%pointing_element%u(2) 
        
     
     end do
     
     !! compute initial residual each time step
-     
     
     init_resid = init_residual(time_step, 0)
   
@@ -341,7 +260,7 @@ program Main
          
       end do
       
-      call velocity_recalculation(non_Direchlet_mass_matrix_lumped, time_step)
+      call velocity_recalculation(time_step)
       
       do i = 1, number_of_non_Direchlet_elements
   
@@ -352,10 +271,10 @@ program Main
         List_of_non_Direchlet_Elements(i)%pointing_element%u_new(2)
        
         
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) = &
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1) = &
         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1)
     
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) = &
+        List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2) = &
         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2)
         
       end do
@@ -363,9 +282,6 @@ program Main
       num_iter = num_iter + 1
         
     end do
-        
-      
-      print *, "max_u:", maximum_u()
       
       do i = 1, number_of_non_Direchlet_elements
       
@@ -376,234 +292,29 @@ program Main
          List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2) 
       
       end do
-       
+      
+      print *, "max_u:", maximum_u()
       
       
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!         Mass transport         !!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
-      print *, "Mass transport:"
+      call scalar_advection(time_step, 1)
       
-      do k = 1, number_of_elements
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!     Concentration transport    !!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
-        List_of_Elements(k)%element_value = List_of_Elements(k)%m
+      call scalar_advection(time_step, 2)
       
-      end do 
-      
-      do k = 1, number_of_elements
-      
-        solution_vec_L(k) = 0d0 
-        solution_vec_C(k) = 0d0
-        
-      
-      end do
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! Right hand calculation for M_L (m) !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      call transport_right_hand_low_order_assembling(time_step)
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! Right hand calculation for M_C (m) !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       
-      call transport_right_hand_high_order_assembling(time_step)
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! set initial guess and compute initial residual for M_C !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   
-   
-      !set initial guess to 0
-      Call dcopy(number_of_elements,0d0,0,solution_vec_C,1)
-
-     !compute initial residual norm
-      resinit_C = ddot(number_of_elements,Right_hand_C,1,Right_hand_C,1)
-      resinit_C = dsqrt(resinit_C)
-      
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!           Solution for M_L   (m)      !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      
-      do k = 1, number_of_elements
-      
-        solution_vec_L(k) = Right_hand_L(k)/mass_matrix_low%a(k) 
-      
-      end do
-          
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!     Iterative solution for M_C  (m)   !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
-          
-      do k = 1, 3
-      
-        call sparce_matrix_vector_multiplication(mass_matrix_high, solution_vec_C, number_of_elements, prom_m) 
-      
-        do i = 1, number_of_elements
-        
-          solution_vec_C(i) = solution_vec_C(i) + (Right_hand_C(i) - prom_m(i))/mass_matrix_low%a(i)
-        
-        end do
-      
-         
-      
-      end do 
-       
-                   
-      do k = 1, number_of_elements
-      
-        solution_vec_C(k) = solution_vec_C(k) + List_of_Elements(k)%element_value
-        solution_vec_L(k) = solution_vec_L(k) + List_of_Elements(k)%element_value
-      
-      end do             
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! Updating element values using flux correction method !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      
-      call flux_correction_procedure(List_of_Triangles, List_of_Elements, number_of_triangles, number_of_elements, &
-      mass_matrix_low%a, solution_vec_C, solution_vec_L)
-      
-      
-      do k = 1, number_of_elements
-      
-        
-        List_of_Elements(k)%m = List_of_Elements(k)%element_value ! List_of_Elements(k)%element_value
-        
-      
-      end do
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!        Concentration transport         !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      print *, "Concentration transport:"
-      
-      do k = 1, number_of_elements
-      
-        solution_vec_L(k) = 0d0 
-        solution_vec_C(k) = 0d0
-        
-        Right_hand_C(k) = 0d0
-        Right_hand_L(k) = 0d0
-      
-      end do
-      
-      
-      do k = 1, number_of_elements
-      
-        List_of_Elements(k)%element_value = List_of_Elements(k)%A
-        
-      end do 
-      
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! Right hand calculation for M_L (A) !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      call transport_right_hand_low_order_assembling(time_step)
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! Right hand calculation for M_C (A) !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       
-      call transport_right_hand_high_order_assembling(time_step)
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! set initial guess and compute initial residual for M_C !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   
-   
-      !set initial guess to 0
-      Call dcopy(number_of_elements,0d0,0,solution_vec_C,1)
-
-     !compute initial residual norm
-      resinit_C = ddot(number_of_elements,Right_hand_C,1,Right_hand_C,1)
-      resinit_C = dsqrt(resinit_C)
-      
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!           Solution for M_L   (A)      !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      
-      do k = 1, number_of_elements
-      
-        solution_vec_L(k) = Right_hand_L(k)/mass_matrix_low%a(k) 
-      
-      end do
-          
-       
-      do k = 1, 3
-      
-        call sparce_matrix_vector_multiplication(mass_matrix_high, solution_vec_C, number_of_elements, prom_A)
-      
-        do i = 1, number_of_elements
-        
-          solution_vec_C(i) = solution_vec_C(i) + (Right_hand_C(i) - prom_A(i))/mass_matrix_low%a(i)
-        
-        end do
-      
-         
-      
-      end do     
-          
-          
-          
-      do k = 1, number_of_elements
-      
-        solution_vec_C(k) = solution_vec_C(k) + List_of_Elements(k)%element_value
-        solution_vec_L(k) = solution_vec_L(k) + List_of_Elements(k)%element_value
-      
-      end do     
-                
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! Updating element values using flux correction method !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      
-      call flux_correction_procedure(List_of_Triangles, List_of_Elements, number_of_triangles, number_of_elements, &
-      mass_matrix_low%a, solution_vec_C, solution_vec_L)
-      
-      
-      
-      do k = 1, number_of_elements
-             
-        if (List_of_Elements(k)%element_value > 1d0) then
-        
-          List_of_Elements(k)%A = 1d0
-           
-        else
-        
-          List_of_Elements(k)%A = List_of_Elements(k)%element_value   
-           
-        end if
-        
-      end do
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!                     h recalculation                  !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!        h recalculation         !!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
       do i = 1, number_of_elements
-       
         List_of_Elements(i)%h = (List_of_Elements(i)%m)/(List_of_Elements(i)%A*rho_ice)
-    
       end do
-      
       
       
       !! next time step
@@ -617,23 +328,11 @@ program Main
       call write_nodals(num, path_to_nodals)
       call write_triangles(num, path_to_triangles)
       
-      
-      print *, "iteration: ", num
-      print *, "sum_mass:", L2_mass(1)
-      print *, "sum_thickness:", L2_mass(2)
-      print *, "sum_concentration:", L2_mass(3)
-      
         
   end do
   
   print *, "Time stepping: done"
   
-  
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!          Ploting solution                            !!
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
   deallocate(init_resid)    
       
-  
 end program Main

@@ -210,7 +210,7 @@ subroutine velocity_recalculation(time_step)
     rhs_1(i) = beta_EVP*u_old_1(i) + u_n_1(i) + (time_step/m(i))*C_a*a(i)*rho_air*u_a_abs(i)*u_a_1(i) + &
       (time_step/m(i))*C_w*a(i)*rho_water*u_w_minus_u_old_abs(i)*u_w_1(i) - &
       (time_step/m(i))*(1d0/non_Direchlet_mass_matrix_lumped%a(i))*sigma_grad_phi_scalar_multiplication( &
-      List_of_non_Direchlet_Elements(i)%pointing_element, 1) !- Ee*u_w_2(i)
+      List_of_non_Direchlet_Elements(i)%pointing_element, 1) - Ee*u_w_2(i)
   
   end do
   
@@ -219,7 +219,7 @@ subroutine velocity_recalculation(time_step)
     rhs_2(i) = beta_EVP*u_old_2(i) + u_n_2(i) + (time_step/m(i))*C_a*a(i)*rho_air*u_a_abs(i)*u_a_2(i) + &
       (time_step/m(i))*C_w*a(i)*rho_water*u_w_minus_u_old_abs(i)*u_w_2(i) - &
       (time_step/m(i))*(1d0/non_Direchlet_mass_matrix_lumped%a(i))*sigma_grad_phi_scalar_multiplication( &
-      List_of_non_Direchlet_Elements(i)%pointing_element, 2) !+ Ee*u_w_1(i)  
+      List_of_non_Direchlet_Elements(i)%pointing_element, 2) + Ee*u_w_1(i)  
   
   end do
   
@@ -374,8 +374,8 @@ function residual(time_step, standart) result(resuidal_res)   ! standart = 1 -- 
   
   do i = 1, number_of_non_Direchlet_elements
   
-    u_val(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1)
-    v_val(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2)
+    u_val(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1)
+    v_val(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2)
     u_n(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u(1)
     v_n(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u(2)
   
@@ -391,13 +391,13 @@ function residual(time_step, standart) result(resuidal_res)   ! standart = 1 -- 
      y1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%coordinates(2)
      y2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%coordinates(2)
      
-     u0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resuid(1)
-     u1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resuid(1)
-     u2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resuid(1)
+     u0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resid(1)
+     u1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resid(1)
+     u2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resid(1)
      
-     v0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resuid(2)
-     v1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resuid(2)
-     v2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resuid(2)
+     v0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resid(2)
+     v1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resid(2)
+     v2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resid(2)
      
      du_dx = ((y2 - y0)*(u1 - u0) - (y1 - y0)*(u2 - u0))/((x1 - x0)*(y2 - y0) - (x2 - x0)*(y1 - y0))
      du_dy = ((x1 - x0)*(u2 - u0) - (x2 - x0)*(u1 - u0))/((x1 - x0)*(y2 - y0) - (x2 - x0)*(y1 - y0))
@@ -459,9 +459,9 @@ function residual(time_step, standart) result(resuidal_res)   ! standart = 1 -- 
   
   do i = 1, number_of_non_Direchlet_elements
   
-    u_minus_u = dsqrt((List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) - &
+    u_minus_u = dsqrt((List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1) - &
     List_of_non_Direchlet_Elements(i)%pointing_element%u_water(1))**2 + &
-    (List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) - &
+    (List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2) - &
     List_of_non_Direchlet_Elements(i)%pointing_element%u_water(2))**2)
     M_w%a(i) = non_Direchlet_mass_matrix_lumped%a(i)*C_w*rho_water*List_of_non_Direchlet_Elements(i)%pointing_element%A/ &
     (List_of_non_Direchlet_Elements(i)%pointing_element%m)*u_minus_u
@@ -1100,13 +1100,13 @@ function init_residual(time_step, standart) result(resuidal_res)
      y1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%coordinates(2)
      y2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%coordinates(2)
      
-     u0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resuid(1)
-     u1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resuid(1)
-     u2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resuid(1)
+     u0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resid(1)
+     u1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resid(1)
+     u2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resid(1)
      
-     v0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resuid(2)
-     v1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resuid(2)
-     v2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resuid(2)
+     v0 = List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%u_resid(2)
+     v1 = List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%u_resid(2)
+     v2 = List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%u_resid(2)
      
      du_dx = ((y2 - y0)*(u1 - u0) - (y1 - y0)*(u2 - u0))/((x1 - x0)*(y2 - y0) - (x2 - x0)*(y1 - y0))
      du_dy = ((x1 - x0)*(u2 - u0) - (x2 - x0)*(u1 - u0))/((x1 - x0)*(y2 - y0) - (x2 - x0)*(y1 - y0))
@@ -1168,9 +1168,9 @@ function init_residual(time_step, standart) result(resuidal_res)
   
   do i = 1, number_of_non_Direchlet_elements
   
-    u_minus_u = dsqrt((List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(1) - &
+    u_minus_u = dsqrt((List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1) - &
     List_of_non_Direchlet_Elements(i)%pointing_element%u_water(1))**2 + &
-    (List_of_non_Direchlet_Elements(i)%pointing_element%u_resuid(2) - &
+    (List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2) - &
     List_of_non_Direchlet_Elements(i)%pointing_element%u_water(2))**2)
     M_w%a(i) = non_Direchlet_mass_matrix_lumped%a(i)*C_w*rho_water*List_of_non_Direchlet_Elements(i)%pointing_element%A/ &
     (List_of_non_Direchlet_Elements(i)%pointing_element%m)*u_minus_u
