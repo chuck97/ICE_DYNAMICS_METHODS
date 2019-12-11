@@ -62,10 +62,10 @@ module initialization_module
   integer            :: nEP(nvmax), IEP(3*ntmax), IRE(3, ntmax)
   integer            :: IPE(3, ntmax), map_tri(3, ntmax), on_bond(nvmax), neighb_tr, neighb_edg
   integer            :: nv,nt,nb,nc
-  double precision   :: vrt(2,nvmax)
+  real*8             :: vrt(2,nvmax)
   integer            ::  tri(3,ntmax), labelT(ntmax)
   integer            ::  bnd(2,nbmax), labelB(nbmax)
-  double precision   :: crv(2,nbmax)
+  real*8             :: crv(2,nbmax)
   integer            :: iFNC(nbmax)
   integer            :: aft2dboundary
   external           :: aft2dboundary

@@ -110,13 +110,13 @@ program Main
     
   !! grid variables 
   integer                        :: Nbv, Nbl
-  double precision, allocatable  :: bv(:, :)
+  real*8,           allocatable  :: bv(:, :)
   integer, allocatable           :: bl(:, :)
-  double precision, allocatable  :: bltail(:,:)
+  real*8, allocatable            :: bltail(:,:)
    
-  double precision, allocatable  :: bv_in(:)
+  real*8, allocatable            :: bv_in(:)
   integer, allocatable           :: bl_in(:)
-  double precision,allocatable   :: bltail_in(:)
+  real*8, allocatable            :: bltail_in(:)
    
   
   !! pathes to different folders
@@ -269,6 +269,7 @@ program Main
   
   end do
   
+  allocate(init_resid(2*number_of_non_Direchlet_elements))
   
   do while (num < num_time_steps)
   
@@ -298,22 +299,22 @@ program Main
     end do
     
     !! compute initial residual each time step
+     
     
-    init_resid = init_residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, &
-      List_of_Triangles, number_of_non_Direchlet_elements, number_of_triangles, time_step, 0)
+    init_resid = init_residual(time_step, 0)
   
   
     num_iter = 1
     
-    call dot_epsilon_delta_recalculation(List_of_Triangles, number_of_triangles, 2)
-    call P_0_recalculation(List_of_Triangles, number_of_triangles)
+    call dot_epsilon_delta_recalculation(2)
+    call P_0_recalculation()
     
     !! mEVP-stepping
     
     do while((num_iter < (N_evp+1)))
     
-      call dot_epsilon_delta_recalculation(List_of_Triangles, number_of_triangles, 1)
-      call P_0_recalculation(List_of_Triangles, number_of_triangles)
+      call dot_epsilon_delta_recalculation(1)
+      call P_0_recalculation()
       
       !!! sigma recalculation
     
@@ -340,8 +341,7 @@ program Main
          
       end do
       
-      call velocity_recalculation(List_of_non_Direchlet_Elements, number_of_non_Direchlet_elements, &
-       ND_mass_matrix_lum, time_step)
+      call velocity_recalculation(non_Direchlet_mass_matrix_lumped, time_step)
       
       do i = 1, number_of_non_Direchlet_elements
   
@@ -360,20 +360,12 @@ program Main
         
       end do
       
-      residual_array(num_iter) = L2_norm(residual(ND_mass_matrix_lum, List_of_non_Direchlet_Elements, List_of_Triangles, &
-           number_of_non_Direchlet_elements, number_of_triangles, time_step, 0), 2*number_of_non_Direchlet_elements)/ &
-           L2_norm(init_resid, 2*number_of_non_Direchlet_elements)
-      
-      print *, "iter", num_iter !, residual_array(num_iter)
-      
       num_iter = num_iter + 1
         
     end do
-      
-      !call print_resudal(residual_array, N_evp, num)  
         
       
-      print *, "max_u:", maximum_u(List_of_Elements, number_of_elements)
+      print *, "max_u:", maximum_u()
       
       do i = 1, number_of_non_Direchlet_elements
       
@@ -412,16 +404,14 @@ program Main
       !! Right hand calculation for M_L (m) !!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
-      call transport_right_hand_low_order_assembling(Right_hand_L, mass_matrix_low, List_of_Elements, &
-      number_of_elements, time_step)
+      call transport_right_hand_low_order_assembling(time_step)
       
       
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !! Right hand calculation for M_C (m) !!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
-      call transport_right_hand_high_order_assembling(Right_hand_C, List_of_Elements, &
-      number_of_elements, time_step)
+      call transport_right_hand_high_order_assembling(time_step)
       
       
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -521,15 +511,13 @@ program Main
       !! Right hand calculation for M_L (A) !!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
-      call transport_right_hand_low_order_assembling(Right_hand_L, mass_matrix_low, List_of_Elements, &
-      number_of_elements, time_step)
+      call transport_right_hand_low_order_assembling(time_step)
       
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !! Right hand calculation for M_C (A) !!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
-      call transport_right_hand_high_order_assembling(Right_hand_C, List_of_Elements, &
-      number_of_elements, time_step)
+      call transport_right_hand_high_order_assembling(time_step)
       
       
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -631,9 +619,9 @@ program Main
       
       
       print *, "iteration: ", num
-      print *, "sum_mass:", L2_mass(List_of_Triangles, number_of_triangles, 1)
-      print *, "sum_thickness:", L2_mass(List_of_Triangles, number_of_triangles, 2)
-      print *, "sum_concentration:", L2_mass(List_of_Triangles, number_of_triangles, 3)
+      print *, "sum_mass:", L2_mass(1)
+      print *, "sum_thickness:", L2_mass(2)
+      print *, "sum_concentration:", L2_mass(3)
       
         
   end do
@@ -645,22 +633,7 @@ program Main
   !!          Ploting solution                            !!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
-  
-  deallocate(prom_m)
-  deallocate(solution_anderson)
-  deallocate(residuals_anderson)
-  deallocate(g_anderson)
-  deallocate(f_anderson)
-  deallocate(init_resid)
-  deallocate(new_sol)
-  deallocate(Big_G_anderson)
-  deallocate(Big_F_anderson)
-  deallocate(rhs_Anderson)
-  deallocate(work)
-  deallocate(new_residual)
-  deallocate(new_g)
-  deallocate(gamma_coefficients)
-  deallocate(residual_pr)
+  deallocate(init_resid)    
       
   
 end program Main

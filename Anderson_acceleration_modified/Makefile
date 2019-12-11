@@ -47,7 +47,7 @@ VALUES_TRIANGLES_DIR = $(BILD_DIR)/values/triangles
 # compiling flags
 FCFLAGS = -c -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
  -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow \
- -finit-real=nan
+ -finit-real=nan -fPIC
           
 # executable          
 PROG = $(BILD_DIR)/$(BIN_DIR)/result.exe
@@ -95,8 +95,8 @@ $(OBJ_DIR)/Grid_values.o               :: $(SRC_DIR)/Grid_values.f95 $(addprefix
 $(OBJ_DIR)/Initialization.o            :: $(SRC_DIR)/Initialization.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o)
 $(OBJ_DIR)/PlotWrite.o                 :: $(SRC_DIR)/Initialization.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o)
 $(OBJ_DIR)/Numerical_integration.o     :: $(SRC_DIR)/Numerical_integration.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o)	
-$(OBJ_DIR)/Matricies.o                 :: $(SRC_DIR)/Matricies.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o)
-$(OBJ_DIR)/Assembling.o                :: $(SRC_DIR)/Assembling.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o)
+$(OBJ_DIR)/Matricies.o                 :: $(SRC_DIR)/Matricies.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o)
+$(OBJ_DIR)/Assembling.o                :: $(SRC_DIR)/Assembling.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o Matricies.o)
 $(OBJ_DIR)/Flux_correction.o           :: $(SRC_DIR)/Flux_correction.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o)
-$(OBJ_DIR)/Dynamics.o                  :: $(SRC_DIR)/Dynamics.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Matricies.o Numerical_integration.o Grid_values.o)
+$(OBJ_DIR)/Dynamics.o                  :: $(SRC_DIR)/Dynamics.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Matricies.o Numerical_integration.o Grid_values.o Assembling.o)
 $(OBJ_DIR)/Main.o                      :: $(SRC_DIR)/Main.f95 $(addprefix $(OBJ_DIR)/, Constants.o Classes.o Matricies.o Numerical_integration.o Dynamics.o Grid_values.o Initialization.o PlotWrite.o Flux_correction.o Assembling.o)

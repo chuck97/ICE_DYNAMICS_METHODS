@@ -4,6 +4,7 @@ module module_assembling
   use module_constants
   use module_numerical_integration
   use module_grid_values
+  use module_matricies
   
 
   implicit none

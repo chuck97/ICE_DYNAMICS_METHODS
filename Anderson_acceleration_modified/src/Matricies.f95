@@ -1,7 +1,6 @@
 module module_matricies
 
   use module_constants
-  use module_numerical_integration
   use module_Classes
 
   implicit none
@@ -66,17 +65,17 @@ module module_matricies
   
   subroutine print_matrix(Matr)
   
-  implicit none
+    implicit none
   
-  type(Matrix),   intent(in) :: Matr
-  integer                    :: i,j,k
+    type(Matrix),   intent(in) :: Matr
+    integer                    :: i,j,k
   
-  print *, "Matrix size x:", Matr%matr_size_x
-  print *, "Matrix size y:", Matr%matr_size_y
-  print *, "Nonzero:", Matr%nonzero
-  print *, "a:", Matr%a(1:Matr%nonzero)
-  print *, "ia:", Matr%ia(1:(Matr%matr_size_y+1))
-  print *, "ja:", Matr%ja(1:Matr%nonzero)
+    print *, "Matrix size x:", Matr%matr_size_x
+    print *, "Matrix size y:", Matr%matr_size_y
+    print *, "Nonzero:", Matr%nonzero
+    print *, "a:", Matr%a(1:Matr%nonzero)
+    print *, "ia:", Matr%ia(1:(Matr%matr_size_y+1))
+    print *, "ja:", Matr%ja(1:Matr%nonzero)
   
    
   end subroutine print_matrix
@@ -104,20 +103,20 @@ module module_matricies
   
   subroutine sparce_matrix_vector_multiplication(matr, vector, size_of_vec, result_vec) 
   
-  implicit none 
+    implicit none 
   
-  real*8,                intent(in)    :: vector(:)
-  real*8,                intent(inout) :: result_vec(:)
-  integer,               intent(in)    :: size_of_vec 
-  type(Matrix),          intent(in)    :: matr
+    real*8,                intent(in)    :: vector(:)
+    real*8,                intent(inout) :: result_vec(:)
+    integer,               intent(in)    :: size_of_vec 
+    type(Matrix),          intent(in)    :: matr
   
-  if (size_of_vec .ne. matr%matr_size_x) then
+    if (size_of_vec .ne. matr%matr_size_x) then
   
-    print *, "WRONG MATRIX OR VECTOR SIZE"
+      print *, "WRONG MATRIX OR VECTOR SIZE"
   
-  end if
+    end if
     
-  call amux(matr%matr_size_y, vector(1:size_of_vec), result_vec, matr%a, matr%ja, matr%ia)
+    call amux(matr%matr_size_y, vector(1:size_of_vec), result_vec, matr%a, matr%ja, matr%ia)
   
   end subroutine sparce_matrix_vector_multiplication
   

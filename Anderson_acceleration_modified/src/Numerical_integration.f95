@@ -2,6 +2,7 @@ module module_numerical_integration
 
   use module_classes
   use module_constants
+  use module_grid_values
   
   implicit none
   
@@ -138,6 +139,8 @@ module module_numerical_integration
   
   function u_nabla_u_phi_nabla_phi(x, y, a1, b1, c1, a2, b2, c2, a_u, b_u, c_u, a_v, b_v, c_v) result(return_value)
   
+    implicit none
+  
     real*8, intent(in) :: x, y, a1, b1, c1, a2, b2, c2, a_u, b_u, c_u, a_v, b_v, c_v
     real*8 :: return_value
     
@@ -153,6 +156,8 @@ module module_numerical_integration
   ! Calculation linear average of m, h or A on triangle
 
 function linear_average_on_triangle(tri, ident) result(avg_tri_res) ! 1 -- m,  2 -- h, 3 -- A
+
+  implicit none
 
   type(Triangle), target :: tri
   integer :: ident
@@ -215,6 +220,8 @@ end function linear_average_on_triangle
   !! convertation from baricentric to ordinary coordinates a1, a2, a3 of triangle with verticies (x1, y1) , (x2, y2), (x3, y3)
   
   function from_baricentric_to_ordinary(a1, a2, a3, x1, x2, x3, y1, y2, y3) result(array_x_y)
+  
+    implicit none
     
     real*8, intent(in) :: a1, a2, a3, x1, x2, x3, y1, y2, y3
     real*8, dimension(2) :: array_x_y
@@ -233,6 +240,8 @@ end function linear_average_on_triangle
   function integral_over_triangle(x1, x2, x3, y1, y2, y3, f, a1, b1, c1, a2, b2, c2, &
     a_u, b_u, c_u, a_v, b_v, c_v) &
     result(numeric_integral)
+    
+    implicit none
   
     real*8, intent(in) :: x1, x2, x3, y1, y2, y3, a1, b1, c1, a2, b2, c2, a_u, b_u, c_u, a_v, b_v, c_v
     procedure(mult_phi)  :: f
@@ -381,13 +390,16 @@ end function integral_over_triangle
 ! scalar multiplication calculation
 
 function scalar_multiplication(f, element1, element2) result(multiplication_result)
+
+   implicit none
    
-   type(Element), target :: element1, element2
-   real*8 :: multiplication_result
-   logical :: not_assoc 
-   integer :: i, j, k
-   real*8 :: coefficients_1(3), coefficients_2(3), coefficients_u(3), coefficients_v(3)
-   procedure(mult_phi)  :: f
+   type(Element), target, intent(in) :: element1, element2
+   real*8                            :: multiplication_result
+   logical                           :: not_assoc 
+   integer                           :: i, j, k
+   real*8                            :: coefficients_1(3), coefficients_2(3), &
+                                        coefficients_u(3), coefficients_v(3)
+   procedure(mult_phi)               :: f
    
    multiplication_result = 0d0
    not_assoc = .true.
@@ -455,13 +467,16 @@ end function scalar_multiplication
 
 
 function scalar_multiplication_on_triangle(f, element1, element2, trian) result(multiplication_result)
+
+   implicit none
    
-   type(Element), target :: element1, element2
-   type(Triangle), target :: trian
-   real*8 :: multiplication_result
-   integer :: i, j, k
-   real*8 :: coefficients_1(3), coefficients_2(3), coefficients_u(3), coefficients_v(3)
-   procedure(mult_phi)  :: f
+   type(Element), target, intent(in)  :: element1, element2
+   type(Triangle), target             :: trian
+   real*8                             :: multiplication_result
+   integer                            :: i, j, k
+   real*8                             :: coefficients_1(3), coefficients_2(3), &
+                                         coefficients_u(3), coefficients_v(3)
+   procedure(mult_phi)                :: f
    
    multiplication_result = 0d0
    
@@ -493,10 +508,13 @@ end function scalar_multiplication_on_triangle
 
 function sigma_grad_phi_scalar_multiplication(elem, ind) result(mult_result)
 
-  type(Element), target :: elem
-  real*8 :: sigma_11, sigma_12, sigma_22
-  integer :: i, j, k, ind
-  real*8 :: coefficients(3), mult_result
+  implicit none
+
+  type(Element), target, intent(in)   :: elem
+  integer, intent(in)                 :: ind
+  real*8                              :: sigma_11, sigma_12, sigma_22
+  integer                             :: i, j, k
+  real*8                              :: coefficients(3), mult_result
   
   mult_result = 0d0
   
@@ -549,10 +567,12 @@ end function sigma_grad_phi_scalar_multiplication
 
 function coefficients_calculation(elem, trian) result(coeff)
 
-  type(Element), target :: elem
-  type(Triangle), target :: trian
-  real*8 :: coeff(3)
-  real*8 :: x0, x1, x2, y0, y1, y2, a, b, c
+  implicit none
+
+  type(Element), target, intent(in)  :: elem
+  type(Triangle), target, intent(in) :: trian
+  real*8                             :: coeff(3)
+  real*8                             :: x0, x1, x2, y0, y1, y2, a, b, c
   
   if (associated(trian%neighbour_elements_list(1)%pointing_element, elem)) then
   
@@ -599,30 +619,26 @@ function coefficients_calculation(elem, trian) result(coeff)
   b = (x1 - x2)/((y0 - y1)*(x0 - x2) - (y0 - y2)*(x0 - x1))
   c = (x2*y1 - x1*y2)/((y0 - y1)*(x0 - x2) - (y0 - y2)*(x0 - x1))
   
-  !a = ((y1 - y0)*(0d0 - 1d0) -(y2 - y0)*(0d0 - 1d0))/((x1 - x0)*(y2 - y0) - (x2 - x0)*(y1 - y0))
-  !b = ((x2 - x0)*(0d0 - 1d0) -(x1 - x0)*(0d0 - 1d0))/((x1 - x0)*(y2 - y0) - (x2 - x0)*(y1 - y0))
-  !c = (x2*y1 - x1*y2)/((y0 - y1)*(x0 - x2) - (y0 - y2)*(x0 - x1))
-  
   coeff(1) = a
   coeff(2) = b
   coeff(3) = c
   
-
 end function coefficients_calculation
+
 
 function u_coefficients_calculation(tri, ident) result(u_coeff_res)
 
-  type(Triangle), target :: tri
-  integer :: ident
-  real*8 :: u_coeff_res(3)
-  real*8 :: x0, y0, h0
-  real*8 :: x1, y1, h1
-  real*8 :: x2, y2, h2
-  real*8 :: a, b, c
+  type(Triangle), target, intent(in) :: tri
+  integer, intent(in)                :: ident
+  real*8                             :: u_coeff_res(3)
+  real*8                             :: x0, y0, h0
+  real*8                             :: x1, y1, h1
+  real*8                             :: x2, y2, h2
+  real*8                             :: a, b, c
+  
   
   x0 = tri%neighbour_elements_list(1)%pointing_element%coordinates(1)
   y0 = tri%neighbour_elements_list(1)%pointing_element%coordinates(2)
-  
   
   x1 = tri%neighbour_elements_list(2)%pointing_element%coordinates(1)
   y1 = tri%neighbour_elements_list(2)%pointing_element%coordinates(2)
@@ -662,11 +678,13 @@ end function u_coefficients_calculation
 
 
 
-function L2_mass(List_of_Triangles, number_of_triangles, ident) result(L2_res) ! 1 -- m,  2 -- h, 3 -- A
+function L2_mass(ident) result(L2_res) ! 1 -- m,  2 -- h, 3 -- A
 
-  type(Triangle), target, dimension(ntmax) :: List_of_Triangles
-  integer :: number_of_triangles, i, j, ident
-  real*8 :: prom, L2_res
+  implicit none
+  
+  integer, intent(in)  :: ident
+  integer              :: number_of_triangles, i, j
+  real*8               :: prom, L2_res
   
   prom = 0d0
   
@@ -683,19 +701,17 @@ end function L2_mass
 
 
 
-
-
-
-
 function resud_u_coefficients_calculation(tri, ident, u_v) result(u_coeff_res) ! u_v = 1 -- u_new, 2 -- u_old
 
-  type(Triangle), target :: tri
-  integer :: ident, u_v
-  real*8 :: u_coeff_res(3)
-  real*8 :: x0, y0, h0
-  real*8 :: x1, y1, h1
-  real*8 :: x2, y2, h2
-  real*8 :: a, b, c
+  implicit none
+
+  type(Triangle), target, intent(in) :: tri
+  integer, intent(in)                :: ident, u_v
+  real*8                             :: u_coeff_res(3)
+  real*8                             :: x0, y0, h0
+  real*8                             :: x1, y1, h1
+  real*8                             :: x2, y2, h2
+  real*8                             :: a, b, c
   
   x0 = tri%neighbour_elements_list(1)%pointing_element%coordinates(1)
   y0 = tri%neighbour_elements_list(1)%pointing_element%coordinates(2)
@@ -785,9 +801,6 @@ function scalar_mult_two_vec(vec1, vec2, size_of_vec) result(scalar_mult_res)
 
 
 end function scalar_mult_two_vec
-
-
-  
 
 
 end module module_numerical_integration
