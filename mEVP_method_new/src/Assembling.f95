@@ -96,12 +96,9 @@ module module_assembling
 
   
   !Assembling high order mass matrix for transport equation
-  subroutine transport_mass_matrix_high_order_assembling(time_step)
+  subroutine transport_mass_matrix_high_order_assembling()
    
     implicit none
-    
-    !!arguments:
-    real*8,intent(in)       :: time_step
     
     !!local variables:
     integer                 :: i, j, k, r, nonzero_raw
@@ -120,8 +117,9 @@ module module_assembling
     nonzero_raw = 0
     nonzero = 0
     
+    a(1) = 0d0 
+    
     do i = 1, number_of_elements
-       
       do j = 1, List_of_Elements(i)%number_of_neighbour_elements
         a(r) = a(r) + & 
         scalar_multiplication(phi_times_phi, List_of_Elements(i)%neighbour_elements_list(j)%pointing_element, &
@@ -131,8 +129,8 @@ module module_assembling
         if (abs(a(r)) > varepsilon) then
           ja(r) = List_of_Elements(i)%neighbour_elements_list(j)%pointing_element%identificator
           nonzero_raw = nonzero_raw + 1
-          a(r) = a(r)
           r = r + 1     
+          a(r) = 0d0
         end if  
       end do
       ia(i+1) = ia(i) + nonzero_raw
@@ -156,12 +154,9 @@ module module_assembling
 
 
   !Assembling low order mass matrix for transport equation
-  subroutine transport_mass_matrix_low_order_assembling(time_step)
+  subroutine transport_mass_matrix_low_order_assembling()
   
     implicit none
-  
-    !!arguments:
-    real*8,intent(in)      :: time_step
     
     !!local variables:
     integer                :: i, j, k, r, nonzero_raw

@@ -67,10 +67,7 @@ module module_advection
     do i = 1, number_of_elements
       solution_vec_L(i) = solution_vec_L(i) + List_of_Elements(i)%element_value
     end do
-    
-    print *, "fr norm:", frobenius_norm(transport_mass_matrix_high_order)   
-    
-    
+     
     
     !! high order solution
     call ILU_2_BICG_solver(transport_mass_matrix_high_order, &

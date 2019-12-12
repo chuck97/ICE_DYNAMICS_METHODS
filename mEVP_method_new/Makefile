@@ -101,4 +101,4 @@ $(OBJ_DIR)/Assembling.o                :: $(SRC_DIR)/Assembling.f95 $(addprefix 
 $(OBJ_DIR)/Flux_correction.o           :: $(SRC_DIR)/Flux_correction.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o Assembling.o)
 $(OBJ_DIR)/Dynamics.o                  :: $(SRC_DIR)/Dynamics.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Matricies.o Numerical_integration.o Grid_values.o Assembling.o)
 $(OBJ_DIR)/Advection.o                 :: $(SRC_DIR)/Advection.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Linear_system_solver.o Flux_correction.o Assembling.o Grid_values.o Dynamics.o Matricies.o)
-$(OBJ_DIR)/Main.o                      :: $(SRC_DIR)/Main.f95 $(addprefix $(OBJ_DIR)/, Constants.o Classes.o Dynamics.o Grid_values.o Initialization.o PlotWrite.o Assembling.o Advection.o)
+$(OBJ_DIR)/Main.o                      :: $(SRC_DIR)/Main.f95 $(addprefix $(OBJ_DIR)/, Constants.o Classes.o Dynamics.o Grid_values.o Initialization.o PlotWrite.o Assembling.o Advection.o Linear_system_solver.o )

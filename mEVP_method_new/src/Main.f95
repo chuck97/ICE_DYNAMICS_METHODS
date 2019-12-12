@@ -8,6 +8,7 @@ program Main
   use module_dynamics
   use module_plotwrite
   use module_advection
+  use module_linear_system_solver
   use json_module
       
   
@@ -18,7 +19,6 @@ program Main
   real*8                         :: squ, max_u
   integer                        :: num_iter, resudal_mass_index 
   real*8, allocatable            :: init_resid(:)
-  
   
   !! mEVP variables
   
@@ -171,11 +171,11 @@ program Main
   
   !! Assembling  M_L and M_C in CSR format for transport equation
   
-  call transport_mass_matrix_low_order_assembling(time_step)
-  call transport_mass_matrix_high_order_assembling(time_step)
+  call transport_mass_matrix_low_order_assembling()
+  call transport_mass_matrix_high_order_assembling()
   
   print *, "Assembling mass matricies for transport: done"
-  
+    
   
   !! Time stepping 
   
