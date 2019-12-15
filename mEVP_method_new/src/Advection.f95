@@ -81,26 +81,35 @@ module module_advection
                            
     !! flux correction update
     call flux_correction_procedure(solution_vec_C, solution_vec_L)
+    !do i = 1, number_of_elements
+    !  List_of_Elements(i)%element_value = solution_vec_L(i)
+    !end do
     
     !! value update
     if (ind == 1) then
-       do i = 1, number_of_elements  
-         List_of_Elements(i)%m = List_of_Elements(i)%element_value
-       end do 
-    else
-      if (ind == 2) then
-        do i = 1, number_of_elements  
-          if (List_of_Elements(i)%element_value < 1d0) then
-            List_of_Elements(i)%A = List_of_Elements(i)%element_value
+      do i = 1, number_of_elements
+        List_of_elements(i)%m = List_of_elements(i)%element_value
+      end do
+    end if
+     
+    if (ind == 2) then
+      do i = 1, number_of_elements
+        if (List_of_elements(i)%element_value > 1d0) then
+          List_of_elements(i)%element_value = 1d0
+        else
+          if (List_of_elements(i)%element_value < 5d-2) then
+            List_of_elements(i)%element_value = 5d-2
           else
-            List_of_Elements(i)%A = 1d0
+            List_of_elements(i)%A = List_of_elements(i)%element_value
           end if  
-        end do 
-      else
-        do i = 1, number_of_elements  
-          List_of_Elements(i)%h = List_of_Elements(i)%element_value
-        end do
-      end if
+        end if  
+      end do  
+    end if  
+      
+    if (ind == 3) then
+      do i = 1, number_of_elements
+        List_of_elements(i)%h = List_of_elements(i)%element_value
+      end do  
     end if                       
     
     

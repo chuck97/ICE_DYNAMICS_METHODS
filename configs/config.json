@@ -1,5 +1,6 @@
 {
-	"time step in hours": 1.0E-1,
+	"time step in hours": 1.0,
+	"total number of time steps": 720,
 	"number of boundary nodes": 4,
 	"number of boundary edges": 4,
 	"square size in meters": 1.0E+6,

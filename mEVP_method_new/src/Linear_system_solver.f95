@@ -4,8 +4,10 @@ module module_linear_system_solver
   use module_constants
   
   implicit none
-  private 
+  private :: residual_tolerance
   public  :: ILU_2_BICG_solver
+  
+  real*8, parameter  :: residual_tolerance = 1d-20
   
   contains
   
@@ -85,7 +87,7 @@ module module_linear_system_solver
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
     
     ITER = 1000             
-    RESID = 1d-5*resinit
+    RESID = residual_tolerance*resinit
     INFO  = 0               
     NUNIT = 6               
     iprevec(1) = system_size           

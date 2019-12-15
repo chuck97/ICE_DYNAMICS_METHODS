@@ -3,10 +3,16 @@ module module_grid_values
   use module_Classes
   
   implicit none
-  public ::  &
-   List_of_Triangles, List_of_Elements, List_of_Edges, List_of_non_Direchlet_Elements, &
-  number_of_non_Direchlet_elements, number_of_elements, number_of_triangles, number_of_edges, vectors_initialization, &
-  scalars_initialization 
+  public ::  List_of_Triangles,                 &
+             List_of_Elements,                  &
+             List_of_Edges,                     &
+             List_of_non_Direchlet_Elements,    &
+             number_of_non_Direchlet_elements,  &
+             number_of_elements,                &
+             number_of_triangles,               &
+             number_of_edges,                   &
+             vectors_initialization,            &
+             scalars_initialization 
   
   type(Triangle), target, dimension(ntmax)               :: List_of_Triangles                 !! List of Triangles
   type(Element),  target, dimension(nvmax)               :: List_of_Elements                  !! List of Elements

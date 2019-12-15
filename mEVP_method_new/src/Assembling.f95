@@ -11,18 +11,18 @@ module module_assembling
   
   private
   
-  public :: transport_mass_matrix_high_order_assembling, &    
-            transport_mass_matrix_low_order_assembling , &    
-            transport_right_hand_low_order_assembling, &      
-            transport_right_hand_high_order_assembling, &     
-            non_Direchlet_mass_matrix_assembling, &           
-            non_Direchlet_mass_matrix_lumped_assembling, &    
-            non_Direchlet_mass_matrix, &                      
-            non_Direchlet_mass_matrix_lumped, &               
-            transport_mass_matrix_high_order, &               
-            transport_mass_matrix_low_order, &                
-            transport_right_hand_high_order, &                
-            transport_right_hand_low_order, &                 
+  public :: transport_mass_matrix_high_order_assembling,     &    
+            transport_mass_matrix_low_order_assembling ,     &    
+            transport_right_hand_low_order_assembling,       &      
+            transport_right_hand_high_order_assembling,      &     
+            non_Direchlet_mass_matrix_assembling,            &           
+            non_Direchlet_mass_matrix_lumped_assembling,     &    
+            non_Direchlet_mass_matrix,                       &                      
+            non_Direchlet_mass_matrix_lumped,                &               
+            transport_mass_matrix_high_order,                &               
+            transport_mass_matrix_low_order,                 &                
+            transport_right_hand_high_order,                 &                
+            transport_right_hand_low_order,                  &                 
             right_hands_distruction                           
             
             
@@ -42,7 +42,7 @@ module module_assembling
     implicit none
   
     !!local variables:
-    integer                     :: i, j, k, r, nonzero_raw
+    integer                     :: i, j, r, nonzero_raw
     real*8, allocatable         :: a(:)
     integer, allocatable        :: ia(:), ja(:)
     integer                     :: nonzero
@@ -101,7 +101,7 @@ module module_assembling
     implicit none
     
     !!local variables:
-    integer                 :: i, j, k, r, nonzero_raw
+    integer                 :: i, j, r, nonzero_raw
     real*8, allocatable     :: a(:)
     integer, allocatable    :: ia(:), ja(:)
     integer, allocatable    :: nonzero
@@ -159,7 +159,7 @@ module module_assembling
     implicit none
     
     !!local variables:
-    integer                :: i, j, k, r, nonzero_raw
+    integer                :: i, j, r, nonzero_raw
     real*8, allocatable    :: a(:)
     integer, allocatable   :: ia(:), ja(:)
     integer                :: nonzero
@@ -176,6 +176,7 @@ module module_assembling
     nonzero = 0
     
     do i = 1, number_of_elements 
+      a(r) = 0d0
       do j = 1, List_of_Elements(i)%number_of_neighbour_elements
         a(r) = a(r) + & 
         scalar_multiplication(phi_times_phi, List_of_Elements(i)%neighbour_elements_list(j)%pointing_element, &
@@ -221,7 +222,7 @@ module module_assembling
     real*8, intent(in)    :: time_step
    
     !!local variables:
-    integer              :: i, j, k
+    integer              :: i, j
     
     allocate(transport_right_hand_high_order(number_of_elements))
         
@@ -244,9 +245,6 @@ module module_assembling
       end do
     end do
     
-    !print *,  time_step*scalar_multiplication(u_phi_times_grad_phi, List_of_Elements(6)%neighbour_elements_list(1)%pointing_element, &
-    !     List_of_Elements(6))
-    
   end subroutine transport_right_hand_high_order_assembling
 
 
@@ -259,7 +257,7 @@ module module_assembling
     real*8,intent(in)   :: time_step
     
     !!local variables:
-    integer             :: i, j, k
+    integer             :: i, j
     
     allocate(transport_right_hand_low_order(number_of_elements))
     

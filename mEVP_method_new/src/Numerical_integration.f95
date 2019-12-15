@@ -8,12 +8,27 @@ module module_numerical_integration
   
   private
   
-  public :: from_baricentric_to_ordinary, integral_over_triangle, phi_times_phi, u_phi_times_grad_phi, &
-  gradphi_times_gradphi, scalar_multiplication, coefficients_calculation, linear_on_triangle, &
-  sigma_times_gradphi, sigma_grad_phi_scalar_multiplication, u_nabla_u_phi_nabla_phi, &
-  L2_mass, linear_average_on_triangle, scalar_multiplication_on_triangle, u_coefficients_calculation, &
-  squared_linear_on_triangle, resud_u_coefficients_calculation, phi_x_times_phi_x, phi_x_times_phi_y, &
-  phi_y_times_phi_x, phi_y_times_phi_y, scalar_mult_two_vec
+  public :: from_baricentric_to_ordinary,             &
+            integral_over_triangle, phi_times_phi,    &
+            u_phi_times_grad_phi,                     &
+            gradphi_times_gradphi,                    &
+            scalar_multiplication,                    &
+            coefficients_calculation,                 &
+            linear_on_triangle,                       &
+            sigma_times_gradphi,                      &
+            sigma_grad_phi_scalar_multiplication,     &
+            u_nabla_u_phi_nabla_phi,                  &
+            L2_mass,                                  &
+            linear_average_on_triangle,               &
+            scalar_multiplication_on_triangle,        &
+            u_coefficients_calculation,               &
+            squared_linear_on_triangle,               &
+            resud_u_coefficients_calculation,         &
+            phi_x_times_phi_x,                        &
+            phi_x_times_phi_y,                        &
+            phi_y_times_phi_x,                        &
+            phi_y_times_phi_y,                        &
+            scalar_mult_two_vec
 
   
   ! Declare procedure interface
@@ -161,14 +176,13 @@ function linear_average_on_triangle(tri, ident) result(avg_tri_res) ! 1 -- m,  2
 
   implicit none
 
-  type(Triangle), target :: tri
-  integer :: ident
-  real*8 :: avg_tri_res
-  real*8 :: x0, y0, h0
-  real*8 :: x1, y1, h1
-  real*8 :: x2, y2, h2
-  real*8 :: a, b, c
-  real*8 :: integr_tr
+  type(Triangle), target, intent(in) :: tri
+  integer, intent(in)                :: ident
+  real*8                             :: avg_tri_res
+  real*8                             :: x0, y0, h0
+  real*8                             :: x1, y1, h1
+  real*8                             :: x2, y2, h2
+  real*8                             :: a, b, c
   
   x0 = tri%neighbour_elements_list(1)%pointing_element%coordinates(1)
   y0 = tri%neighbour_elements_list(1)%pointing_element%coordinates(2)
@@ -476,7 +490,6 @@ function scalar_multiplication_on_triangle(f, element1, element2, trian) result(
    type(Element), target, intent(in)  :: element1, element2
    type(Triangle), target             :: trian
    real*8                             :: multiplication_result
-   integer                            :: i, j, k
    real*8                             :: coefficients_1(3), coefficients_2(3), &
                                          coefficients_u(3), coefficients_v(3)
    procedure(mult_phi)                :: f
@@ -516,7 +529,7 @@ function sigma_grad_phi_scalar_multiplication(elem, ind) result(mult_result)
   type(Element), target, intent(in)   :: elem
   integer, intent(in)                 :: ind
   real*8                              :: sigma_11, sigma_12, sigma_22
-  integer                             :: i, j, k
+  integer                             :: i
   real*8                              :: coefficients(3), mult_result
   
   mult_result = 0d0
@@ -686,15 +699,13 @@ function L2_mass(ident) result(L2_res) ! 1 -- m,  2 -- h, 3 -- A
   implicit none
   
   integer, intent(in)  :: ident
-  integer              :: number_of_triangles, i, j
+  integer              :: i
   real*8               :: prom, L2_res
   
   prom = 0d0
   
   do i = 1, number_of_triangles
-  
     prom = prom + linear_average_on_triangle(List_of_Triangles(i), ident)*List_of_Triangles(i)%size_of_triangle
-  
   end do
   
   L2_res = prom
@@ -790,7 +801,7 @@ function scalar_mult_two_vec(vec1, vec2, size_of_vec) result(scalar_mult_res)
   real*8, intent(in)  :: vec1(:), vec2(:) 
   integer, intent(in) :: size_of_vec
   real*8              :: scalar_mult_res, prom
-  integer             :: i, j, k
+  integer             :: i
   
   prom = 0d0
   

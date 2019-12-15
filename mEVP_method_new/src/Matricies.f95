@@ -7,8 +7,11 @@ module module_matricies
   
   private
   
-  public :: lumping_square, print_matrix, Matr1_eqv_Matr2, sparce_matrix_vector_multiplication, &
-   big_block_matrix_assembling, frobenius_norm
+  public :: lumping_square,                        &
+            Matr1_eqv_Matr2,                       &
+            sparce_matrix_vector_multiplication,   &
+            big_block_matrix_assembling,           &
+            frobenius_norm
   
   contains
   
@@ -19,7 +22,7 @@ module module_matricies
     implicit none
   
     type(Matrix),        intent(inout) :: Matr
-    integer                            :: i, j, k, m_size
+    integer                            :: i, k, m_size
     real*8                             :: prom_value
     integer,   allocatable             :: ia(:), ja(:)
     real*8,    allocatable             :: a(:)
@@ -60,25 +63,6 @@ module module_matricies
     deallocate(ja)
    
   end subroutine lumping_square
-  
-  !! print CSR-matrix subroutine
-  
-  subroutine print_matrix(Matr)
-  
-    implicit none
-  
-    type(Matrix),   intent(in) :: Matr
-    integer                    :: i,j,k
-  
-    print *, "Matrix size x:", Matr%matr_size_x
-    print *, "Matrix size y:", Matr%matr_size_y
-    print *, "Nonzero:", Matr%nonzero
-    print *, "a:", Matr%a(1:Matr%nonzero)
-    print *, "ia:", Matr%ia(1:(Matr%matr_size_y+1))
-    print *, "ja:", Matr%ja(1:Matr%nonzero)
-  
-   
-  end subroutine print_matrix
 
 !! Matr1 eqv Matr2 subroutine
   
@@ -136,7 +120,7 @@ module module_matricies
                                          M21, M22, M23, M24, M25
     type(Matrix), intent(inout) :: Matr_res                                     
     integer, intent(in)         :: notr, nov
-    integer                     :: i, j, k, nzmx, ierr, nrowc, ncolc, matr_size_tot, nonzero_tot
+    integer                     :: nzmx, ierr, nrowc, ncolc, matr_size_tot, nonzero_tot
     integer, allocatable        :: ia(:), ib(:), ja(:), jb(:)
     real*8,  allocatable        :: a(:), b(:)                                           
     
@@ -520,7 +504,7 @@ module module_matricies
   
     type(Matrix), intent(in)  :: Matr
     real*8                    :: frb
-    integer                   :: i, j, k
+    integer                   :: i, j
     real*8                    :: prom, max_row
     
     max_row = -1d10

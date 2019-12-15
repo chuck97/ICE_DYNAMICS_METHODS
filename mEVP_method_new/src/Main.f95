@@ -9,6 +9,10 @@ program Main
   use module_plotwrite
   use module_advection
   use module_linear_system_solver
+  use module_air
+  use module_water
+  use module_numerical_integration
+  use module_mEVP_dynamics
   use json_module
       
   
@@ -17,7 +21,7 @@ program Main
   !! global time step, current time:
   real*8                         :: time_step, time
   real*8                         :: squ, max_u
-  integer                        :: num_iter, resudal_mass_index 
+  integer                        :: num_iter, resudal_mass_index, num_time_steps
   real*8, allocatable            :: init_resid(:)
   
   !! mEVP variables
@@ -73,6 +77,9 @@ program Main
   if (json%failed()) stop "failed to load .json!"
   
   call json%get('time step in hours', time_step, is_found)
+  if (.not. is_found) stop "no value of time step!"
+  
+  call json%get('total number of time steps',num_time_steps, is_found)
   if (.not. is_found) stop "no value of time step!"
     
   call json%get('number of boundary nodes', Nbv, is_found)
@@ -147,12 +154,10 @@ program Main
   
   print *, "Grid generating: done"
   
-  !! scalars, vectors, forcing initialization
+  !! scalars, vectors, initialization
   
   call vectors_initialization(boundary_type)
-  call scalars_initialization()
-  call wind_forcing_initialization(boundary_type)
-  call water_forcing_initialization(boundary_type)
+  call scalars_initialization(square_size)
   
   print *, "External forcing setup: done"
   
@@ -189,149 +194,63 @@ program Main
   
   end do
   
+  call plot_ParaView(0, path_to_graphics)
+  
   allocate(init_resid(2*number_of_non_Direchlet_elements))
+  
+  num = 1
   
   do while (num < num_time_steps)
   
     !!! wind and water setup
-  
-    do i = 1, number_of_non_Direchlet_elements
     
-      x_coord = List_of_non_Direchlet_Elements(i)%pointing_element%coordinates(1)
-      y_coord = List_of_non_Direchlet_Elements(i)%pointing_element%coordinates(2)
+    call water_forcing_update(boundary_type, time, square_size)
+    call air_forcing_update(boundary_type, time, square_size)
     
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_air(1) = 5d0 + &
-       (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*x_coord/square_size)*dsin(pi*y_coord/square_size)
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_air(2) = 5d0 + &
-       (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*y_coord/square_size)*dsin(pi*x_coord/square_size)
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_water(1) = &
-       (2d0*y_coord - 1d6)/(10d0*square_size)
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_water(2) = &
-       -(2d0*x_coord - 1d6)/(10d0*square_size)  
-       
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1) = &
-      List_of_non_Direchlet_Elements(i)%pointing_element%u(1)
-      
-      List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2) = &
-      List_of_non_Direchlet_Elements(i)%pointing_element%u(2) 
-       
-    
-    end do
     
     !! compute initial residual each time step
     
-    init_resid = init_residual(time_step, 0)
+    !init_resid = init_residual(time_step, 0)
+    
+    
   
-  
-    num_iter = 1
-    
-    call dot_epsilon_delta_recalculation(2)
-    call P_0_recalculation()
-    
-    !! mEVP-stepping
-    
-    do while((num_iter < (N_evp+1)))
-    
-      call dot_epsilon_delta_recalculation(1)
-      call P_0_recalculation()
+    call mEVP_velocity_update(time_step)
       
-      !!! sigma recalculation
-    
-      do i = 1, number_of_Triangles
       
-        List_of_Triangles(i)%sigma1 = &
-         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma1 + &
-         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon1 - &
-         List_of_Triangles(i)%delta)* &
-         (List_of_Triangles(i)%P_0)/ &
-         (List_of_Triangles(i)%delta + delta_min)
-         
-        List_of_Triangles(i)%sigma2 = &
-         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma2 + &
-         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon2)* &
-         (List_of_Triangles(i)%P_0)/ &
-         ((List_of_Triangles(i)%delta + delta_min)*e**2)
-         
-        List_of_Triangles(i)%sigma12 = &
-         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma12 + &
-         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon12)* &
-         (List_of_Triangles(i)%P_0)/ &
-         ((List_of_Triangles(i)%delta + delta_min)*e**2) 
-         
-      end do
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!         Mass transport         !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
-      call velocity_recalculation(time_step)
+    call scalar_advection(time_step, 1)
       
-      do i = 1, number_of_non_Direchlet_elements
-  
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1) = &
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_new(1)
-    
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2) = &
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_new(2)
-       
-        
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1) = &
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1)
-    
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2) = &
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2)
-        
-      end do
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!     Concentration transport    !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       
-      num_iter = num_iter + 1
-        
+    call scalar_advection(time_step, 2)
+      
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!        h recalculation         !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      
+    do i = 1, number_of_elements
+      List_of_Elements(i)%h = (List_of_Elements(i)%m)/(List_of_Elements(i)%A*rho_ice)
     end do
       
-      do i = 1, number_of_non_Direchlet_elements
+    !! next time step
       
-        List_of_non_Direchlet_Elements(i)%pointing_element%u(1) = &
-         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1)
-         
-        List_of_non_Direchlet_Elements(i)%pointing_element%u(2) = &
-         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2) 
+    num = num + 1
+    time = time + time_step
       
-      end do
+    print *,"iteration:", num-1, "time moment: ", time/hour , "hours sum mass:", L2_mass(1)
       
-      print *, "max_u:", maximum_u()
-      
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!         Mass transport         !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      call scalar_advection(time_step, 1)
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!     Concentration transport    !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      call scalar_advection(time_step, 2)
-      
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!        h recalculation         !!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
-      do i = 1, number_of_elements
-        List_of_Elements(i)%h = (List_of_Elements(i)%m)/(List_of_Elements(i)%A*rho_ice)
-      end do
-      
-      
-      !! next time step
-      
-      num = num + 1
-      time = time + time_step
-      
-      print *, "time moment: ", time/hour , "hours"
-      
-      call plot_ParaView(num, path_to_graphics)
-      call write_nodals(num, path_to_nodals)
-      call write_triangles(num, path_to_triangles)
-      
+    call plot_ParaView(num, path_to_graphics)
+    call write_nodals(num, path_to_nodals)
+    call write_triangles(num, path_to_triangles)  
         
   end do
   
-  print *, "Time stepping: done"
+  print *, "Time steping: done"
   
   deallocate(init_resid)    
       

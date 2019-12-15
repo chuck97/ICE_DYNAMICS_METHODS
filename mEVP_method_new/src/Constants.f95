@@ -4,7 +4,7 @@ module module_constants
   
   public :: pi, nvmax, ntmax, nbmax, maxn, maxnz, rho_water, rho_ice, rho_air,  &
             C_w, C_a, C, e, delta_min, p_str, c_d, h_grid, alpha_EVP, beta_EVP, &
-            N_total, L_2_accuracy, omega_e, num_time_steps, varepsilon, hour,   &
+            N_total, L_2_accuracy, omega_e,  varepsilon, hour,   &
             T_period, alpha_Anderson, m_Anderson, num_anderson_iterations, N_Picard
   
   real*8, parameter    :: pi = 3.1415926535897931d0                                    ! Class-wide private constant
@@ -21,11 +21,9 @@ module module_constants
   real*8, parameter    :: p_str = 275d2                                                ! value of p* in pressure definition
   real*8, parameter    :: c_d = 50d-2                                                  ! value of c_d in numerical viscosity
   real*8, parameter    :: h_grid = 15000d0                                             ! parameter of quazi-uniform mesh
-  real*8, parameter    :: alpha_EVP = 5d2, beta_EVP = 5d2                              ! iterative EVP-solver parameters
   integer, parameter   :: N_total = 500                                                ! max number of iterations in EVP-solver
   real*8, parameter    :: L_2_accuracy = 1d-7                                          ! L_2 accuracy in EVP-solver 
   real*8, parameter    :: omega_e = 7.292116d-5                                        ! angle velocity of Earh rotation 
-  integer, parameter   :: num_time_steps = 400       
   real*8, parameter    :: varepsilon = 1d-30                                           ! machine epsilon
   real*8, parameter    :: hour = 36d2
   real*8, parameter    :: T_period = 3456d2
@@ -35,6 +33,5 @@ module module_constants
   integer, parameter   :: N_Picard = 30                                                ! number of Picard iterations
   integer, parameter   :: strlen = 40                                                  ! length of strings  
   integer, parameter   :: max_number_of_diagonals  = 15                                ! max number of diagonals in sparse matricies    
-  integer, parameter   :: N_evp = 300
 
 end module module_constants

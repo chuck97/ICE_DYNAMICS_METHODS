@@ -8,9 +8,7 @@ module module_initialization
   private :: append 
   public  :: grid_initialization,           &
              vectors_initialization,        &
-             scalars_initialization,        &
-             wind_forcing_initialization,   &
-             water_forcing_initialization
+             scalars_initialization
   
   contains
   
@@ -402,69 +400,22 @@ end subroutine grid_initialization
   end subroutine vectors_initialization
   
   !! This routine initializes scalar variables m, A, h
-  subroutine scalars_initialization()
+  subroutine scalars_initialization(square_size)
   
     implicit none
     
+    !! arguments:
+    real*8, intent(in)             :: square_size
+    
     !! local variables
     integer                        :: i
-    
+       
     do i = 1, number_of_elements
-      List_of_Elements(i)%h = 2d0
+      List_of_Elements(i)%h = 2d0*List_of_Elements(i)%coordinates(1)/square_size
       List_of_Elements(i)%A = 95d-2
       List_of_Elements(i)%m = List_of_Elements(i)%A*List_of_Elements(i)%h*rho_ice
     end do
 
   end subroutine scalars_initialization
-  
-  !! This routine initializes wind forcing
-  subroutine wind_forcing_initialization(boundary_type)
-  
-    implicit none
-    
-    !!arguments:
-    character(len=*), intent(in) :: boundary_type
-    
-    !!local variables
-    integer     :: i
-    
-    do i = 1, number_of_elements
-      if (List_of_Elements(i)%on_boundary) then
-        if (trim(boundary_type) == "sticking") then
-          List_of_Elements(i)%u_air(1) = 0d0
-          List_of_Elements(i)%u_air(2) = 0d0
-        end if
-      else
-        List_of_Elements(i)%u_air(1) = 1d0
-        List_of_Elements(i)%u_air(2) = 1d0  
-      end if
-    end do
-  
-  end subroutine wind_forcing_initialization
-  
-  !! This routine initializes water forcing
-  subroutine water_forcing_initialization(boundary_type)
-  
-    implicit none
-    
-    !!arguments:
-    character(len=*), intent(in) :: boundary_type
-    
-    !!local variables
-    integer     :: i
-    
-    do i = 1, number_of_elements
-      if (List_of_Elements(i)%on_boundary) then
-        if (trim(boundary_type) == "cling") then
-          List_of_Elements(i)%u_water(1) = 0d0
-          List_of_Elements(i)%u_water(2) = 0d0
-        end if
-      else
-        List_of_Elements(i)%u_water(1) = 0d0
-        List_of_Elements(i)%u_water(2) = 0d0  
-      end if
-    end do
-  
-  end subroutine water_forcing_initialization
   
 end module module_initialization

@@ -11,8 +11,8 @@ module module_flux_correction
   private
   
   private   :: flux_calculation, &
-               P_calculation, &
-               u_calculation, &
+               P_calculation,    &
+               u_calculation,    &
                alpha_calculation
                
   public    :: flux_correction_procedure
@@ -197,6 +197,7 @@ module module_flux_correction
    end do
    
  end subroutine u_calculation
+ 
  
  subroutine alpha_calculation()
  
