@@ -411,8 +411,16 @@ end subroutine grid_initialization
     integer                        :: i
        
     do i = 1, number_of_elements
-      List_of_Elements(i)%h = 2d0*List_of_Elements(i)%coordinates(1)/square_size
-      List_of_Elements(i)%A = 95d-2
+      if ((List_of_Elements(i)%coordinates(2) < 25d-2*square_size) .and. &
+          (List_of_Elements(i)%coordinates(2) > 5d-2*square_size) .and.  &
+          (List_of_Elements(i)%coordinates(1) > 5d-2*square_size) .and. &
+          (List_of_Elements(i)%coordinates(1) < 95d-2*square_size)) then
+        List_of_Elements(i)%h = 2d0
+        List_of_Elements(i)%A = 80d-2
+      else
+        List_of_Elements(i)%h = 10d-2
+        List_of_Elements(i)%A = 10d-2
+      end if
       List_of_Elements(i)%m = List_of_Elements(i)%A*List_of_Elements(i)%h*rho_ice
     end do
 

@@ -12,7 +12,7 @@ program Main
   use module_air
   use module_water
   use module_numerical_integration
-  use module_mEVP_dynamics
+  use module_mEVP_dynamics, only: mEVP_velocity_update
   use json_module
       
   
@@ -212,10 +212,7 @@ program Main
     
     !init_resid = init_residual(time_step, 0)
     
-    
-  
     call mEVP_velocity_update(time_step)
-      
       
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!         Mass transport         !!

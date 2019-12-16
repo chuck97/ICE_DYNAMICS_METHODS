@@ -3,7 +3,7 @@ module module_constants
   implicit none
   
   public :: pi, nvmax, ntmax, nbmax, maxn, maxnz, rho_water, rho_ice, rho_air,  &
-            C_w, C_a, C, e, delta_min, p_str, c_d, h_grid, alpha_EVP, beta_EVP, &
+            C_w, C_a, C, e, delta_min, p_str, c_d, h_grid, &
             N_total, L_2_accuracy, omega_e,  varepsilon, hour,   &
             T_period, alpha_Anderson, m_Anderson, num_anderson_iterations, N_Picard
   

@@ -16,7 +16,6 @@ module module_numerical_integration
             coefficients_calculation,                 &
             linear_on_triangle,                       &
             sigma_times_gradphi,                      &
-            sigma_grad_phi_scalar_multiplication,     &
             u_nabla_u_phi_nabla_phi,                  &
             L2_mass,                                  &
             linear_average_on_triangle,               &
@@ -517,65 +516,6 @@ function scalar_multiplication_on_triangle(f, element1, element2, trian) result(
   
 
 end function scalar_multiplication_on_triangle
-
-
-
-! sigma grad(phi) scalar multiplication_function
-
-function sigma_grad_phi_scalar_multiplication(elem, ind) result(mult_result)
-
-  implicit none
-
-  type(Element), target, intent(in)   :: elem
-  integer, intent(in)                 :: ind
-  real*8                              :: sigma_11, sigma_12, sigma_22
-  integer                             :: i
-  real*8                              :: coefficients(3), mult_result
-  
-  mult_result = 0d0
-  
-  if (ind == 1) then
-  
-    do i = 1, elem%number_of_neighbour_triangles
-    
-      coefficients = coefficients_calculation(elem, &
-       elem%neighbour_triangles_list(i)%pointing_triangle)
-                
-      sigma_11 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 + &
-      elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
-      sigma_22 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 - &
-      elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
-      sigma_12 = elem%neighbour_triangles_list(i)%pointing_triangle%sigma12
-  
-      mult_result = mult_result + &
-      elem%neighbour_triangles_list(i)%pointing_triangle%size_of_triangle*( &
-      sigma_11*coefficients(1) + sigma_12*coefficients(2))
-  
-    end do
-    
-    else
-    
-    do i = 1, elem%number_of_neighbour_triangles
-    
-      coefficients = coefficients_calculation(elem, &
-       elem%neighbour_triangles_list(i)%pointing_triangle)
-  
-      sigma_11 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 + &
-      elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
-      sigma_22 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 - &
-      elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
-      sigma_12 = elem%neighbour_triangles_list(i)%pointing_triangle%sigma12
-  
-      mult_result = mult_result + &
-      elem%neighbour_triangles_list(i)%pointing_triangle%size_of_triangle*( &
-      sigma_12*coefficients(1) + sigma_22*coefficients(2))
-  
-    end do
-       
-  endif
-
-end function sigma_grad_phi_scalar_multiplication
-
 
 
 

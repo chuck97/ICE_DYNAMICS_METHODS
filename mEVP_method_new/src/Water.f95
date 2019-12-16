@@ -32,10 +32,10 @@ module module_water
       else
         x_coord = List_of_elements(i)%coordinates(1)
         y_coord = List_of_elements(i)%coordinates(2)
-        List_of_Elements(i)%u_water(1) = &
-          (2d0*y_coord - 1d6)/(10d0*square_size)
-        List_of_Elements(i)%u_water(2) = &
-         -(2d0*x_coord - 1d6)/(10d0*square_size)  
+        List_of_Elements(i)%u_water(1) = 0d0 !&
+          !(2d0*y_coord - 1d6)/(10d0*square_size)
+        List_of_Elements(i)%u_water(2) = 0d0 !&
+         !-(2d0*x_coord - 1d6)/(10d0*square_size)  
       end if
     end do
   

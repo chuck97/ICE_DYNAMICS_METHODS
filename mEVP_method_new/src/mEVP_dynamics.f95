@@ -3,6 +3,8 @@ module module_mEVP_dynamics
   use module_classes
   use module_constants
   use module_grid_values
+  use module_assembling
+  use module_numerical_integration, only : coefficients_calculation
   
   private :: alpha_mEVP,                            &
              beta_mEVP,                             &
@@ -11,19 +13,15 @@ module module_mEVP_dynamics
              dot_epsilon_delta_recalculation,       &
              velocity_recalculation,                &
              maximum_u,                             &
-             
-             
+             sigma_grad_phi_scalar_multiplication
              
   public  :: mEVP_velocity_update
               
-  
   real*8, parameter   :: alpha_mEVP = 5d2
-  real*8, parameter   :: alpha_mEVP = 5d2
+  real*8, parameter   :: beta_mEVP = 5d2
   integer, parameter  :: num_iter_mEVP = 500
   
   contains
-  
-  
   
   subroutine dot_epsilon_delta_recalculation(ind)
   
@@ -123,11 +121,11 @@ module module_mEVP_dynamics
   
     implicit none
     
+    !!local variables:
     real*8                                                  :: A_avg, h_avg, delt 
     integer                                                 :: i
     
     do i = 1, number_of_triangles
-    
       A_avg = (1d0/3d0)*(List_of_Triangles(i)%neighbour_elements_list(1)%pointing_element%A + &
       List_of_Triangles(i)%neighbour_elements_list(2)%pointing_element%A + &
       List_of_Triangles(i)%neighbour_elements_list(3)%pointing_element%A)
@@ -139,14 +137,9 @@ module module_mEVP_dynamics
       delt = List_of_Triangles(i)%delta
       
       List_of_Triangles(i)%P_0 = h_avg*p_str*dexp(-C*(1d0 - A_avg))*delt/(delt + delta_min)
-      
-    
     end do
     
   end subroutine P_0_recalculation
-  
-  
-  
   
   subroutine velocity_recalculation(time_step)
  
@@ -194,7 +187,7 @@ module module_mEVP_dynamics
       u_n_1(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u(1)
       u_n_2(i) = List_of_non_Direchlet_Elements(i)%pointing_element%u(2)
       u_w_minus_u_old_abs(i) = dsqrt((u_w_1(i) - u_old_1(i))**2 + (u_w_2(i) - u_old_2(i))**2)
-      L(i) = (beta_EVP + 1) + (time_step/m(i))*C_w*a(i)*rho_water*u_w_minus_u_old_abs(i)
+      L(i) = (beta_mEVP + 1) + (time_step/m(i))*C_w*a(i)*rho_water*u_w_minus_u_old_abs(i)
       Ee = 2d0*time_step*omega_e
     
     end do
@@ -202,7 +195,7 @@ module module_mEVP_dynamics
     
     do i = 1, number_of_non_Direchlet_elements
     
-      rhs_1(i) = beta_EVP*u_old_1(i) + u_n_1(i) + (time_step/m(i))*C_a*a(i)*rho_air*u_a_abs(i)*u_a_1(i) + &
+      rhs_1(i) = beta_mEVP*u_old_1(i) + u_n_1(i) + (time_step/m(i))*C_a*a(i)*rho_air*u_a_abs(i)*u_a_1(i) + &
         (time_step/m(i))*C_w*a(i)*rho_water*u_w_minus_u_old_abs(i)*u_w_1(i) - &
         (time_step/m(i))*(1d0/non_Direchlet_mass_matrix_lumped%a(i))*sigma_grad_phi_scalar_multiplication( &
         List_of_non_Direchlet_Elements(i)%pointing_element, 1) - Ee*u_w_2(i)
@@ -211,7 +204,7 @@ module module_mEVP_dynamics
     
     do i = 1, number_of_non_Direchlet_elements
     
-      rhs_2(i) = beta_EVP*u_old_2(i) + u_n_2(i) + (time_step/m(i))*C_a*a(i)*rho_air*u_a_abs(i)*u_a_2(i) + &
+      rhs_2(i) = beta_mEVP*u_old_2(i) + u_n_2(i) + (time_step/m(i))*C_a*a(i)*rho_air*u_a_abs(i)*u_a_2(i) + &
         (time_step/m(i))*C_w*a(i)*rho_water*u_w_minus_u_old_abs(i)*u_w_2(i) - &
         (time_step/m(i))*(1d0/non_Direchlet_mass_matrix_lumped%a(i))*sigma_grad_phi_scalar_multiplication( &
         List_of_non_Direchlet_Elements(i)%pointing_element, 2) + Ee*u_w_1(i)  
@@ -271,6 +264,8 @@ module module_mEVP_dynamics
   
   end function maximum_u
   
+  
+  
   subroutine mEVP_velocity_update(time_step)
   
     implicit none
@@ -279,7 +274,7 @@ module module_mEVP_dynamics
     real*8, intent(in)   :: time_step
     
     !!local variables:
-    integer              :: num_iter
+    integer              :: num_iter, i
     
     num_iter = 1
     
@@ -289,45 +284,34 @@ module module_mEVP_dynamics
       call P_0_recalculation()
      
       do i = 1, number_of_Triangles
-      
         List_of_Triangles(i)%sigma1 = &
-         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma1 + &
-         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon1 - &
+         (1d0 - (1d0/alpha_mEVP))*List_of_Triangles(i)%sigma1 + &
+         (1d0/alpha_mEVP)*(List_of_Triangles(i)%dot_epsilon1 - &
          List_of_Triangles(i)%delta)* &
          (List_of_Triangles(i)%P_0)/ &
          (List_of_Triangles(i)%delta + delta_min)
          
         List_of_Triangles(i)%sigma2 = &
-         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma2 + &
-         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon2)* &
+         (1d0 - (1d0/alpha_mEVP))*List_of_Triangles(i)%sigma2 + &
+         (1d0/alpha_mEVP)*(List_of_Triangles(i)%dot_epsilon2)* &
          (List_of_Triangles(i)%P_0)/ &
          ((List_of_Triangles(i)%delta + delta_min)*e**2)
          
         List_of_Triangles(i)%sigma12 = &
-         (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma12 + &
-         (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon12)* &
+         (1d0 - (1d0/alpha_mEVP))*List_of_Triangles(i)%sigma12 + &
+         (1d0/alpha_mEVP)*(List_of_Triangles(i)%dot_epsilon12)* &
          (List_of_Triangles(i)%P_0)/ &
          ((List_of_Triangles(i)%delta + delta_min)*e**2) 
-         
       end do
       
       call velocity_recalculation(time_step)
       
       do i = 1, number_of_non_Direchlet_elements
-  
         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1) = &
         List_of_non_Direchlet_Elements(i)%pointing_element%u_new(1)
     
         List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2) = &
         List_of_non_Direchlet_Elements(i)%pointing_element%u_new(2)
-       
-        
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(1) = &
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(1)
-    
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_resid(2) = &
-        List_of_non_Direchlet_Elements(i)%pointing_element%u_old(2)
-        
       end do
       
       num_iter = num_iter + 1
@@ -349,8 +333,57 @@ module module_mEVP_dynamics
   
   end subroutine mEVP_velocity_update
   
-
   
   
+  function sigma_grad_phi_scalar_multiplication(elem, ind) result(mult_result) ! ind = 1 -- first component, ind = 2 -- second component
 
+    implicit none
+    
+    !!arguments:
+    type(Element), target, intent(in)   :: elem
+    integer, intent(in)                 :: ind
+    
+    !!local variables:
+    real*8                              :: sigma_11, sigma_12, sigma_22
+    integer                             :: i
+    real*8                              :: coefficients(3), mult_result
+  
+    mult_result = 0d0
+  
+    if (ind == 1) then
+      do i = 1, elem%number_of_neighbour_triangles
+        coefficients = coefficients_calculation(elem, &
+         elem%neighbour_triangles_list(i)%pointing_triangle)
+                
+        sigma_11 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 + &
+        elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
+        sigma_22 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 - &
+        elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
+        sigma_12 = elem%neighbour_triangles_list(i)%pointing_triangle%sigma12
+  
+        mult_result = mult_result + &
+        elem%neighbour_triangles_list(i)%pointing_triangle%size_of_triangle*( &
+        sigma_11*coefficients(1) + sigma_12*coefficients(2))
+      end do
+      
+      else
+    
+      do i = 1, elem%number_of_neighbour_triangles
+        coefficients = coefficients_calculation(elem, &
+         elem%neighbour_triangles_list(i)%pointing_triangle)
+        sigma_11 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 + &
+        elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
+        sigma_22 = 5d-1*(elem%neighbour_triangles_list(i)%pointing_triangle%sigma1 - &
+        elem%neighbour_triangles_list(i)%pointing_triangle%sigma2)
+        sigma_12 = elem%neighbour_triangles_list(i)%pointing_triangle%sigma12
+  
+        mult_result = mult_result + &
+        elem%neighbour_triangles_list(i)%pointing_triangle%size_of_triangle*( &
+        sigma_12*coefficients(1) + sigma_22*coefficients(2))
+      end do
+    endif
+    
+  end function sigma_grad_phi_scalar_multiplication
+
+  
 end module module_mEVP_dynamics

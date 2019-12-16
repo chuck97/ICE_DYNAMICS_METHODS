@@ -32,12 +32,12 @@ module module_air
           List_of_Elements(i)%u_air(2) = 0d0
         end if
       else
-        x_coord = List_of_elements(i)%coordinates(1)
-        y_coord = List_of_elements(i)%coordinates(2)
-        List_of_Elements(i)%u_air(1) = 5d0 + &
-         (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*x_coord/square_size)*dsin(pi*y_coord/square_size)
-        List_of_Elements(i)%u_air(2) = 5d0 + &
-         (dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*y_coord/square_size)*dsin(pi*x_coord/square_size)
+        !x_coord = List_of_elements(i)%coordinates(1)
+        !y_coord = List_of_elements(i)%coordinates(2)
+        List_of_Elements(i)%u_air(1) = 0d0 !5d0 + &
+         !(dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*x_coord/square_size)*dsin(pi*y_coord/square_size)
+        List_of_Elements(i)%u_air(2) = 15d0  !5d0 + &
+         !(dsin(2d0*pi*time/T_period) - 3d0)*dsin(2d0*pi*y_coord/square_size)*dsin(pi*x_coord/square_size)
       end if
     end do
   
