@@ -12,7 +12,8 @@ program Main
   use module_air
   use module_water
   use module_numerical_integration
-  use module_mEVP_dynamics, only: mEVP_velocity_update
+  use module_mEVP_dynamics, only: mEVP_velocity_update, alpha_mEVP, beta_mEVP
+  use module_residual
   use json_module
       
   
@@ -180,6 +181,12 @@ program Main
   call transport_mass_matrix_high_order_assembling()
   
   print *, "Assembling mass matricies for transport: done"
+  
+  !! Assembling R_x, R_y, S matrix for residual calculation
+  
+  call R_assembling(1)
+  call R_assembling(2)
+  call S_assembling()
     
   
   !! Time stepping 
@@ -205,14 +212,22 @@ program Main
     !!! wind and water setup
     
     call water_forcing_update(boundary_type, time, square_size)
+    
+    call gradient_water_level_update(time, square_size, .true.)
+    
+    !! previous sigma1, sigma2, sigma12 store
+    do i = 1, number_of_Triangles
+      List_of_triangles(i)%sigma1_previous = List_of_triangles(i)%sigma1
+      List_of_triangles(i)%sigma2_previous = List_of_triangles(i)%sigma2
+      List_of_triangles(i)%sigma12_previous = List_of_triangles(i)%sigma12
+    end do
+    
     call air_forcing_update(boundary_type, time, square_size)
     
+    alpha_mEVP = 5d2
+    beta_mEVP = 5d2
     
-    !! compute initial residual each time step
-    
-    !init_resid = init_residual(time_step, 0)
-    
-    call mEVP_velocity_update(time_step)
+    call mEVP_velocity_update(time_step, square_size)
       
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!         Mass transport         !!

@@ -6,7 +6,7 @@ module module_water
   
   private
   
-  public :: water_forcing_update
+  public :: water_forcing_update, gradient_water_level_update
   
   contains
   
@@ -40,5 +40,41 @@ module module_water
     end do
   
   end subroutine water_forcing_update
+  
+  
+  subroutine gradient_water_level_update(time, square_size, is_geostrophic)
+  
+    implicit none
+    
+    !!arguments:
+    real*8, intent(in)       :: time, square_size
+    logical, intent(in)      :: is_geostrophic
+    
+    !!local arguments:
+    integer                  :: i
+    real*8                   :: u1, u2, u3, v1, v2, v3, u_ave, v_ave
+    
+    if (is_geostrophic) then
+    
+      do i = 1, number_of_triangles
+        u1 = List_of_triangles(i)%neighbour_elements_list(1)%pointing_element%u_water(1)
+        u2 = List_of_triangles(i)%neighbour_elements_list(2)%pointing_element%u_water(1)
+        u3 = List_of_triangles(i)%neighbour_elements_list(3)%pointing_element%u_water(1)
+        v1 = List_of_triangles(i)%neighbour_elements_list(1)%pointing_element%u_water(2)
+        v2 = List_of_triangles(i)%neighbour_elements_list(2)%pointing_element%u_water(2)
+        v3 = List_of_triangles(i)%neighbour_elements_list(3)%pointing_element%u_water(2)
+        u_ave = (u1 + u2 + u3)/3d0
+        v_ave = (v1 + v2 + v3)/3d0        
+        List_of_triangles(i)%dH_dx = (2d0*omega_e/g_gravity)*v_ave
+        List_of_triangles(i)%dH_dy = -(2d0*omega_e/g_gravity)*u_ave
+      end do
+    
+    else
+    
+      stop "no input water level"
+    
+    end if
+  
+  end subroutine  gradient_water_level_update
 
 end module module_water

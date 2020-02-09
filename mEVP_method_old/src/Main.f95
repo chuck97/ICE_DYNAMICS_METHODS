@@ -226,6 +226,7 @@ program Main
            (List_of_Triangles(i)%P_0)/ &
            (List_of_Triangles(i)%delta + delta_min)
            
+           
           List_of_Triangles(i)%sigma2 = &
            (1d0 - (1d0/alpha_EVP))*List_of_Triangles(i)%sigma2 + &
            (1d0/alpha_EVP)*(List_of_Triangles(i)%dot_epsilon2)* &

@@ -2,7 +2,7 @@
 FC = gfortran
 
 # objectives
-OBJS = $(addprefix $(OBJ_DIR)/,Main.o Initialization.o PlotWrite.o Grid_values.o Matricies.o Numerical_integration.o Constants.o Classes.o Assembling.o Flux_correction.o Dynamics.o Linear_system_solver.o Advection.o Air.o Water.o mEVP_dynamics.o)
+OBJS = $(addprefix $(OBJ_DIR)/,Main.o Initialization.o Residual.o PlotWrite.o Grid_values.o Matricies.o Numerical_integration.o Constants.o Classes.o Assembling.o Flux_correction.o Dynamics.o Linear_system_solver.o Advection.o Air.o Water.o mEVP_dynamics.o)
 
 # linker options
 LINKER = $(FC) -o 
@@ -45,9 +45,9 @@ VALUES_TRIANGLES_DIR = $(BILD_DIR)/values/triangles
   
 
 # compiling flags
-FCFLAGS = -c -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
- -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow \
- -finit-real=nan -fPIC
+FCFLAGS = -O -c -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
+ -fbacktrace -ffree-line-length-0 -fcheck=all \
+ -finit-real=nan -fPIC 
           
 # executable          
 PROG = $(BILD_DIR)/$(BIN_DIR)/result.exe
@@ -103,5 +103,6 @@ $(OBJ_DIR)/Assembling.o                :: $(SRC_DIR)/Assembling.f95 $(addprefix 
 $(OBJ_DIR)/Flux_correction.o           :: $(SRC_DIR)/Flux_correction.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Numerical_integration.o Grid_values.o Assembling.o)
 $(OBJ_DIR)/Dynamics.o                  :: $(SRC_DIR)/Dynamics.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Matricies.o Numerical_integration.o Grid_values.o Assembling.o)
 $(OBJ_DIR)/Advection.o                 :: $(SRC_DIR)/Advection.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Linear_system_solver.o Flux_correction.o Assembling.o Grid_values.o Dynamics.o Matricies.o)
-$(OBJ_DIR)/mEVP_dynamics.o             :: $(SRC_DIR)/mEVP_dynamics.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o Assembling.o Numerical_integration.o)
+$(OBJ_DIR)/Residual.o                  :: $(SRC_DIR)/Residual.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o Assembling.o Numerical_integration.o Matricies.o Dynamics.o)
+$(OBJ_DIR)/mEVP_dynamics.o             :: $(SRC_DIR)/mEVP_dynamics.f95 $(addprefix $(OBJ_DIR)/,Constants.o Classes.o Grid_values.o Assembling.o Numerical_integration.o Residual.o Dynamics.o)
 $(OBJ_DIR)/Main.o                      :: $(SRC_DIR)/Main.f95 $(addprefix $(OBJ_DIR)/, Constants.o Classes.o Dynamics.o Grid_values.o Initialization.o PlotWrite.o Assembling.o Advection.o Linear_system_solver.o Air.o Water.o Numerical_integration.o mEVP_dynamics.o)

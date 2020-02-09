@@ -4,7 +4,7 @@
 	"number of boundary nodes": 4,
 	"number of boundary edges": 4,
 	"square size in meters": 1.0E+6,
-	"number of grid verticies per square edge": 50,
+	"number of grid verticies per square edge": 100,
 	"boundary nodes coordinates unit size":[
 	0., 0.,
 	0., 1.,

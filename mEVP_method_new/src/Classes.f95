@@ -77,10 +77,13 @@ module module_classes
      real*8                                  :: dot_epsilon1, dot_epsilon2, dot_epsilon12                
      real*8                                  :: P_0                                                      
      real*8                                  :: coordinates(2,3)                                         
-     real*8                                  :: sigma1, sigma2, sigma12                                   
+     real*8                                  :: sigma1, sigma2, sigma12
+     real*8                                  :: sigma1_previous, sigma2_previous, sigma12_previous
+     real*8                                  :: sigma_resid(3)                                   
      real*8                                  :: delta
      real*8                                  :: xi_resuid, eta_resuid, P_0_resuid
-     real*8                                  :: delta_old                                                   
+     real*8                                  :: delta_old         
+     real*8                                  :: dH_dx, dH_dy                                          
      real*8                                  :: size_of_triangle                                         
      integer                                 :: number_of_neighbour_triangles                            
      type(container_element), dimension(3)   :: neighbour_elements_list                                  
@@ -106,9 +109,10 @@ module module_classes
      real*8                                       :: u(2)                                                  
      real*8                                       :: u_old(2)                                              
      real*8                                       :: u_water(2)
-     real*8                                       :: u_resid(2)                                           
+     real*8                                       :: u_resid(2)                                         
      real*8                                       :: u_air(2)
      real*8                                       :: u_new(2)
+     real*8                                       :: water_level
      real*8                                       :: m                                                     
      real*8                                       :: old_m
      real*8                                       :: h                                                     

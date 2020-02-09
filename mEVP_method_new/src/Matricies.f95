@@ -11,7 +11,11 @@ module module_matricies
             Matr1_eqv_Matr2,                       &
             sparce_matrix_vector_multiplication,   &
             big_block_matrix_assembling,           &
-            frobenius_norm
+            frobenius_norm,                        &
+            vectors_elementwise_multiplication,    &
+            vectors_sum,                           &
+            vector_mult_constant,                  &
+            vectors_scalar_multiplication
   
   contains
   
@@ -96,13 +100,62 @@ module module_matricies
   
     if (size_of_vec .ne. matr%matr_size_x) then
   
-      print *, "WRONG MATRIX OR VECTOR SIZE"
+      stop "WRONG MATRIX OR VECTOR SIZE"
   
     end if
     
     call amux(matr%matr_size_y, vector(1:size_of_vec), result_vec, matr%a, matr%ja, matr%ia)
   
   end subroutine sparce_matrix_vector_multiplication
+  
+  
+  subroutine vectors_elementwise_multiplication(vec1, vec2, size_of_vec, result_vec)
+  
+    implicit none
+    
+    real*8,  intent(in)    :: vec1(:)
+    real*8,  intent(in)    :: vec2(:)
+    real*8,  intent(inout) :: result_vec(:)
+    integer, intent(in)    :: size_of_vec
+    integer                :: i
+    
+    do i = 1, size_of_vec
+      result_vec(i) = vec1(i)*vec2(i)
+    end do
+    
+  end subroutine vectors_elementwise_multiplication
+  
+  
+  subroutine vectors_sum(vec1, vec2, size_of_vec, result_vec)
+  
+    implicit none 
+    
+    real*8,  intent(in)    :: vec1(:)
+    real*8,  intent(in)    :: vec2(:)
+    real*8,  intent(inout) :: result_vec(:)
+    integer, intent(in)    :: size_of_vec
+    integer                :: i
+    
+    do i = 1, size_of_vec
+      result_vec(i) = vec1(i) + vec2(i)
+    end do
+  
+  end subroutine vectors_sum
+  
+  function vector_mult_constant(vec, size_of_vec, const) result(res_vec)
+  
+    implicit none
+    real*8, intent(in)    :: vec(:)
+    integer, intent(in)   :: size_of_vec
+    real*8, intent(in)    :: const
+    real*8                :: res_vec(size_of_vec)
+    integer               :: i
+    
+    do i = 1, size_of_vec
+      res_vec(i) = vec(i)*const
+    end do
+  
+  end function vector_mult_constant
   
   ! 5*5 block matrix
   
@@ -529,7 +582,28 @@ module module_matricies
     
     frb = max_row
   
-  end function frobenius_norm             
+  end function frobenius_norm  
+  
+  function vectors_scalar_multiplication(vec1, vec2, size_of_vec) result(res)
+  
+    implicit none
+    
+    real*8, intent(in)  :: vec1(:), vec2(:)
+    integer, intent(in) :: size_of_vec
+    real*8              :: res
+    
+    integer             :: i
+    real*8              :: prom
+    
+    prom = 0d0
+    
+    do i = 1, size_of_vec
+      prom = prom + vec1(i)*vec2(i)
+    end do
+    
+    res = prom
+  
+  end function  vectors_scalar_multiplication
   
   
   
